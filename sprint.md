@@ -37,7 +37,7 @@
 - [x] 结果页基础：event summary、Figure Feed、浓度、证据解释、promoted relationship
 - [x] 后端脚手架：`apps/api`（Node 20 + TypeScript + Express 5），Cornell 网关兼容的 LLM client，`/health`，trace id，JSON 错误
 - [x] Contracts v1：`packages/contracts` 4 个 JSON Schema + fixtures，Ajv 校验 + PRD §41.5 规则，26 个测试
-- [ ] 确认 Cornell 网关是否支持 strict JSON Schema 输出（填 key 后跑 `npm run smoke:llm`）
+- [x] 确认 Cornell 网关支持 strict JSON Schema 输出（`npm run smoke:llm`：`openai.gpt-5-mini`，`json_schema` 模式，约 2.5 s）
 - [ ] Orchestrator `POST /api/v1/sessions/run`（A → 校验 → B → 校验 → 合并；§42.3 失败回退）
 - [ ] Domain A — Input & Memory Interpreter（接 LLM，输出 §41 JSON contract）
 - [ ] Domain B — Ecosystem Director（关系促进与后续互动）
@@ -99,3 +99,4 @@
 - 新增 `packages/contracts`：`event-interpretation.v1`（新增 `voiceLine`）、`ecosystem-snapshot.v1`（seed memory 加 title/objectName）、`ecosystem-resolution.v1`（新增三步 `explanation`）、`client-session-response.v1`（带 `fallback` 标记）+ 对应 fixtures。
 - 决定：语音转文字在手机端，后端不做音频上传。
 - 验证：typecheck、26 个 vitest、build、本地启动 `/health` 均通过。尚未用真实 key 调网关。
+- 用真实 key 跑 `npm run smoke:llm`：Cornell 网关 + `openai.gpt-5-mini` 返回正确，strict `json_schema` 可用，约 2.5 s。
