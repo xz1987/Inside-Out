@@ -7,22 +7,10 @@ import { validateInterpretation } from '../src/contracts/validate.js';
 import { InputInterpreter, llmOutputSchema, normalizeConcentrations } from '../src/domains/input/inputInterpreter.js';
 import { interpretWithKeywords } from '../src/domains/input/keywordInterpreter.js';
 import { AnalysisTimeoutError, AnalysisUnavailableError } from '../src/domains/input/types.js';
-import type { CompleteJsonRequest, JsonCompletion, JsonLlm } from '../src/llm/llmClient.js';
+import type { JsonLlm } from '../src/llm/llmClient.js';
+import { FakeLlm } from './helpers.js';
 
 const DRIVER = 'So on my way home from work, this car just cut me off at the roundabout. The driver yelled at me like it was my fault.';
-
-/** Returns (or throws) the queued responses in order and records requests. */
-class FakeLlm implements JsonLlm {
-  readonly configured = true;
-  readonly requests: CompleteJsonRequest[] = [];
-  constructor(private readonly queue: Array<unknown | Error>) {}
-  async completeJson<T>(req: CompleteJsonRequest): Promise<JsonCompletion<T>> {
-    this.requests.push(req);
-    const next = this.queue.shift();
-    if (next instanceof Error) throw next;
-    return { data: structuredClone(next) as T, mode: 'json_schema', model: 'fake' };
-  }
-}
 
 const modelOutput = () => ({
   summary: 'A driver cut you off on the way home and blamed you for it.',

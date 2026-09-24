@@ -23,8 +23,9 @@ describe('config', () => {
     expect(config.llm.ecosystem.apiKey).toBe('eco');
   });
 
-  it('defaults reasoning effort to low and lets "off" omit it', () => {
+  it('defaults reasoning effort per domain and lets "off" omit it', () => {
     expect(loadConfig({}).llm.input.reasoningEffort).toBe('low');
+    expect(loadConfig({}).llm.ecosystem.reasoningEffort).toBe('minimal');
     expect(loadConfig({ INPUT_REASONING_EFFORT: 'off' }).llm.input.reasoningEffort).toBeUndefined();
     expect(loadConfig({ ECOSYSTEM_REASONING_EFFORT: 'high' }).llm.ecosystem.reasoningEffort).toBe('high');
     expect(() => loadConfig({ INPUT_REASONING_EFFORT: 'turbo' })).toThrow(/Invalid reasoning effort/);

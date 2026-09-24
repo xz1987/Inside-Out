@@ -38,14 +38,15 @@
 - [x] 后端脚手架：`apps/api`（Node 20 + TypeScript + Express 5），Cornell 网关兼容的 LLM client，`/health`，trace id，JSON 错误
 - [x] Contracts v1：`packages/contracts` 4 个 JSON Schema + fixtures，Ajv 校验 + PRD §41.5 规则，26 个测试
 - [x] 确认 Cornell 网关支持 strict JSON Schema 输出（`npm run smoke:llm`：`openai.gpt-5-mini`，`json_schema` 模式，约 2.5 s）
-- [ ] Orchestrator `POST /api/v1/sessions/run`（A → 校验 → B → 校验 → 合并；§42.3 失败回退）
+- [x] Orchestrator `POST /api/v1/sessions/run`（A → 校验 → B → 校验 → 合并；A 失败不调 B；B 文案失败用模板并标 fallback）
 - [x] Domain A — `POST /api/v1/events/interpret`：prompt `input-v1`、strict JSON Schema 输出、服务端校验 + 1 次纠错重试、无 key 时关键词回退、503/502 错误语义
 - [ ] Domain A prompt 调优：summary 偶尔超过 30 词；uncertainties 偏多（目前 UI 不展示，影响不大）
-- [ ] Domain B — Ecosystem Director（关系促进与后续互动）
+- [x] Domain B — `POST /api/v1/ecosystem/resolve`：确定性规则决定变形/掠夺/降级/Mask/关系前后值，LLM（`ecosystem-mvp-v1`）只写关系理由和三步解释，只看 summary 不看原文
+- [ ] iOS 改为调用 `/sessions/run`（需要把 Figure 状态/关系/种子记忆作为 snapshot 发给后端；等 Screen 3–5 开工时一起做）
 - [x] iOS 端接入 `/api/v1/events/interpret`（`APIClient` + `RemoteEventInterpreter`），后端不可达时回退本地关键词并在结果页标注 “Offline guess”
 - [ ] 确认前修改 interpretation：增减 Figure、调浓度、改 summary（MVP-FR-04）
 - [x] Most fed 视觉（C 位 + 更大 + 更亮）、EXP bar 当前值 → 本次增量动画
-- [ ] Relationship before/after 数值（目前只显示 +N bond）
+- [~] Relationship before/after 数值：后端 Domain B 已返回 before/delta/after；iOS 仍只显示 +8 bond，待接 `/sessions/run`
 - [ ] 可展开查看原始 transcript、`Edit input` 返回 Screen 1
 
 ## Sprint 3 — Mock Narrative（PRD §32–35）
@@ -116,3 +117,11 @@
 - 结果页：单个 Figure 居中、100% 标签隐藏、未参与的 Figure 分散在两侧；离线时摘要下方显示 “Offline guess from keywords”。
 - 模拟器验证（真实 Cornell 网关）：语音示例 → Anger+Fear（7.6 s）；打字 “Mia 送咖啡” → 仅 Joy 居中（3.8 s）；停掉后端 → 离线回退并标注；无效 key → 显示 “Something went wrong / Tap Done to try again”，输入保留；日志中无 key。
 - 注意：`http://localhost` 在模拟器上无需 ATS 例外；真机需改 `API_BASE_URL` 为局域网 IP / HTTPS 隧道（PRD §45.2）。
+
+### 2026-09-24（后端：Domain B + Orchestrator，分支 `feat/ecosystem-domain-v1`）
+- 新增 `src/domains/ecosystem/`：`scenario.ts`（确定性规则：Feed 最高者变形、EXP 设为 100−feed 刚好达标；关系优先用 Domain A 的 cue，delta≈(feedA+feedB)/4 最小 4，单 Figure 时沿用其最强已有关系 +4；掠夺目标优先选本次未参与、等级最高的 Figure 的可见记忆；受害者降到 Level 1、记忆 masked）、`ecosystemDirector.ts`（LLM 只改写文案，任何失败回退模板）、`prompts/ecosystem-mvp-v1.ts`。
+- 新增路由 `routes/ecosystem.ts`（400 输入校验、422 无可掠夺记忆）、`routes/sessions.ts`（Orchestrator）；Domain A 错误映射抽成 `sendAnalysisError` 共用。
+- 规则用 fixture 输入可完全复现 `ecosystem-resolution.valid.json`（测试覆盖）。
+- 真实网关端到端（3 个样例，均无 fallback）：初版 11–12 s（A 5–6 s + B 5–6 s）。B 改用 `reasoning_effort: minimal` 后约 2 s，总计 5–10 s，文案质量不变 → B 默认 `minimal`、A 保持 `low`。
+- 修正：单 Figure 时 LLM 会编造另一个 Figure 也参与了事件；prompt 增加 `bothInEvent` 标记后改为“通过已有的共同记忆变得更亲近”。
+- 测试 70 个全部通过（新增 25 个：规则、Director 回退、两个路由、Orchestrator 不在 A 失败时调用 B）。

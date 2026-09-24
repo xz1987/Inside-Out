@@ -40,8 +40,8 @@ test/                    vitest: contract fixtures + app/config
 |---|---|
 | `GET /health` | done |
 | `POST /api/v1/events/interpret` (Domain A) | done |
-| `POST /api/v1/ecosystem/resolve` (Domain B) | next |
-| `POST /api/v1/sessions/run` (orchestrator, what iOS calls) | next |
+| `POST /api/v1/ecosystem/resolve` (Domain B) | done |
+| `POST /api/v1/sessions/run` (orchestrator, what iOS calls) | done |
 
 Speech-to-text happens on the phone, so the backend only receives text and
 there is no audio upload endpoint.
@@ -65,6 +65,33 @@ there is no audio upload endpoint.
 Prompt: `src/domains/input/prompts/input-v1.ts`. Bump the version on any behaviour change.
 `npm run try:input` runs it against the real gateway on sample memories
 (`npm run try:input -- "your text"` for your own).
+
+## Domain B — `POST /api/v1/ecosystem/resolve`
+
+Body: `{ interpretation, snapshot }` (both validated). Returns
+`{ resolution: EcosystemResolutionV1, fallback, promptVersion, traceId }`.
+
+The staged MVP outcome is decided in code (`src/domains/ecosystem/scenario.ts`),
+so the same inputs always give the same story:
+
+- **Evolves**: the most-fed Figure, staged to start `feed` short of 100 EXP.
+- **Bond**: Domain A's cue for the top two Figures (delta ≈ combined feed / 4, min 4);
+  a lone Figure reuses its strongest existing bond (+4, "Existing memory connection").
+- **Raid target**: a visible seed memory not owned by the evolved Figure — prefer
+  a Figure that sat the event out, then the highest level. Always succeeds.
+- **Aftermath**: victim to Level 1, memory masked.
+
+The LLM (`ecosystem-mvp-v1`) only rewrites the bond reason and the three-step
+explanation, and only sees the summary — never the raw memory text. Any LLM
+problem falls back to template wording with `fallback: true`; no raidable memory
+→ `422 scenario_unavailable`.
+
+## Orchestrator — `POST /api/v1/sessions/run` (what iOS calls)
+
+Body: `{ inputType, text, importance?, snapshot, sessionId? }`. Runs Domain A →
+validate → Domain B → validate and returns `ClientSessionResponseV1` with
+`fallback: { interpretation, resolution }`. If Domain A fails (503/502), Domain B
+is not called. Typical latency on the Cornell gateway: A ≈ 3–8 s, B ≈ 2 s.
 
 ## Scripts
 

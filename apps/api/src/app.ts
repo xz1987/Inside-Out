@@ -5,6 +5,9 @@ import { LlmClient } from './llm/llmClient.js';
 import { ContractError } from './contracts/validate.js';
 import { InputInterpreter } from './domains/input/inputInterpreter.js';
 import { eventsRouter } from './routes/events.js';
+import { EcosystemDirector } from './domains/ecosystem/ecosystemDirector.js';
+import { ecosystemRouter } from './routes/ecosystem.js';
+import { sessionsRouter } from './routes/sessions.js';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -20,15 +23,18 @@ export interface AppDeps {
   inputLlm: LlmClient;
   ecosystemLlm: LlmClient;
   inputInterpreter: InputInterpreter;
+  ecosystemDirector: EcosystemDirector;
 }
 
 export function createDeps(config: AppConfig): AppDeps {
   const inputLlm = new LlmClient(config.llm.input);
+  const ecosystemLlm = new LlmClient(config.llm.ecosystem);
   return {
     config,
     inputLlm,
-    ecosystemLlm: new LlmClient(config.llm.ecosystem),
+    ecosystemLlm,
     inputInterpreter: new InputInterpreter(inputLlm, config.llm.input.promptVersion),
+    ecosystemDirector: new EcosystemDirector(ecosystemLlm, config.llm.ecosystem.promptVersion),
   };
 }
 
@@ -72,9 +78,8 @@ export function createApp(deps: AppDeps) {
   });
 
   app.use(eventsRouter(deps.inputInterpreter));
-  // Still to come:
-  //   POST /api/v1/ecosystem/resolve  (Domain B)
-  //   POST /api/v1/sessions/run       (orchestrator)
+  app.use(ecosystemRouter(deps.ecosystemDirector));
+  app.use(sessionsRouter(deps.inputInterpreter, deps.ecosystemDirector));
 
   app.use((req, res) => {
     res.status(404).json({ error: { code: 'not_found', message: `No route for ${req.method} ${req.path}` }, traceId: req.traceId });

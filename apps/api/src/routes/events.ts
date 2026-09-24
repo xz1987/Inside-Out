@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 import type { InputInterpreter } from '../domains/input/inputInterpreter.js';
 import { AnalysisTimeoutError, AnalysisUnavailableError, type RitualInput } from '../domains/input/types.js';
 
@@ -49,19 +49,24 @@ export function eventsRouter(interpreter: InputInterpreter): Router {
         traceId: req.traceId,
       });
     } catch (error) {
-      if (error instanceof AnalysisTimeoutError) {
-        console.warn(`[${req.traceId}] interpret timeout`, (error.cause as Error | undefined)?.message);
-        res.status(503).json({ error: { code: error.code, message: error.message, retryable: true }, traceId: req.traceId });
-        return;
-      }
-      if (error instanceof AnalysisUnavailableError) {
-        console.warn(`[${req.traceId}] interpret invalid output`, error.details);
-        res.status(502).json({ error: { code: error.code, message: error.message, retryable: true }, traceId: req.traceId });
-        return;
-      }
-      next(error);
+      if (!sendAnalysisError(error, req, res)) next(error);
     }
   });
 
   return router;
+}
+
+/** Maps Domain A failures to HTTP (PRD §42.3). Returns false if not handled. */
+export function sendAnalysisError(error: unknown, req: Request, res: Response): boolean {
+  if (error instanceof AnalysisTimeoutError) {
+    console.warn(`[${req.traceId}] interpret timeout`, (error.cause as Error | undefined)?.message);
+    res.status(503).json({ error: { code: error.code, message: error.message, retryable: true }, traceId: req.traceId });
+    return true;
+  }
+  if (error instanceof AnalysisUnavailableError) {
+    console.warn(`[${req.traceId}] interpret invalid output`, error.details);
+    res.status(502).json({ error: { code: error.code, message: error.message, retryable: true }, traceId: req.traceId });
+    return true;
+  }
+  return false;
 }

@@ -41,12 +41,13 @@ export function gatewayModel(model: string, baseURL: string): string {
 }
 
 /**
- * Defaults to "low": on gpt-5-mini via the Cornell gateway it cut latency from
- * ~9–16 s to ~3–7 s with no visible quality loss ("minimal" started padding
- * Figures). "off" omits the parameter for models that don't support it.
+ * Defaults measured on gpt-5-mini via the Cornell gateway:
+ * - input "low": ~3–7 s vs ~9–16 s by default, same quality ("minimal" padded Figures);
+ * - ecosystem "minimal": ~2 s vs ~5–6 s at "low"; it only words a decided outcome.
+ * "off" omits the parameter for models that don't support it.
  */
-function parseEffort(value: string | undefined): ReasoningEffort | undefined {
-  if (value === undefined) return 'low';
+function parseEffort(value: string | undefined, fallback: ReasoningEffort): ReasoningEffort | undefined {
+  if (value === undefined) return fallback;
   if (value === 'off') return undefined;
   if (!REASONING_EFFORTS.includes(value)) throw new Error(`Invalid reasoning effort: ${value}`);
   return value as ReasoningEffort;
@@ -55,21 +56,21 @@ function parseEffort(value: string | undefined): ReasoningEffort | undefined {
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const baseURL = normalizeBaseURL(env.LLM_HOST || env.LLM_BASE_URL);
   const blank = (value: string | undefined) => (value && value.trim() ? value.trim() : undefined);
-  const domain = (name: Domain, prefix: 'INPUT' | 'ECOSYSTEM', defaultPrompt: string): LlmDomainConfig => ({
+  const domain = (name: Domain, prefix: 'INPUT' | 'ECOSYSTEM', defaultPrompt: string, defaultEffort: ReasoningEffort): LlmDomainConfig => ({
     domain: name,
     apiKey: blank(env[`${prefix}_DOMAIN_API_KEY`]) ?? blank(env.OPENAI_API_KEY),
     baseURL,
     model: gatewayModel(blank(env[`${prefix}_DOMAIN_MODEL`]) ?? 'gpt-5-mini', baseURL),
     promptVersion: blank(env[`${prefix}_PROMPT_VERSION`]) ?? defaultPrompt,
-    reasoningEffort: parseEffort(blank(env[`${prefix}_REASONING_EFFORT`])),
+    reasoningEffort: parseEffort(blank(env[`${prefix}_REASONING_EFFORT`]), defaultEffort),
   });
 
   return {
     port: Number(env.PORT) || 3000,
     appEnv: env.APP_ENV || 'development',
     llm: {
-      input: domain('input', 'INPUT', 'input-v1'),
-      ecosystem: domain('ecosystem', 'ECOSYSTEM', 'ecosystem-mvp-v1'),
+      input: domain('input', 'INPUT', 'input-v1', 'low'),
+      ecosystem: domain('ecosystem', 'ECOSYSTEM', 'ecosystem-mvp-v1', 'minimal'),
     },
   };
 }
