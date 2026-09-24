@@ -13,13 +13,19 @@ struct APIClient {
 
     var baseURL: URL = APIClient.defaultBaseURL
     var session: URLSession = .shared
-    var timeout: TimeInterval = 30
+    /// Domain A + Domain B together typically take 5–10 s.
+    var timeout: TimeInterval = 45
 
-    func interpret(text: String, source: EventSource) async throws -> InterpretResponseDTO {
-        var request = URLRequest(url: baseURL.appendingPathComponent("api/v1/events/interpret"), timeoutInterval: timeout)
+    /// POST /api/v1/sessions/run — interpretation + staged ecosystem outcome.
+    func runSession(text: String, source: EventSource, snapshot: SnapshotDTO) async throws -> SessionResponseDTO {
+        try await post("api/v1/sessions/run", SessionRequestDTO(inputType: source.rawValue, text: text, snapshot: snapshot))
+    }
+
+    private func post<Body: Encodable, Response: Decodable>(_ path: String, _ body: Body) async throws -> Response {
+        var request = URLRequest(url: baseURL.appendingPathComponent(path), timeoutInterval: timeout)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(InterpretRequestDTO(inputType: source.rawValue, text: text))
+        request.httpBody = try JSONEncoder().encode(body)
 
         let data: Data
         let response: URLResponse
@@ -40,7 +46,7 @@ struct APIClient {
             )
         }
         do {
-            return try JSONDecoder().decode(InterpretResponseDTO.self, from: data)
+            return try JSONDecoder().decode(Response.self, from: data)
         } catch {
             throw APIError.invalidResponse
         }
@@ -66,19 +72,80 @@ enum APIError: LocalizedError, Equatable {
     }
 }
 
-// MARK: - Wire format (packages/contracts/schemas/event-interpretation.v1)
+// MARK: - Wire format (packages/contracts/schemas)
 
-struct InterpretRequestDTO: Encodable {
+struct SessionRequestDTO: Encodable {
     let inputType: String
     let text: String
+    let snapshot: SnapshotDTO
 }
 
-struct InterpretResponseDTO: Decodable {
+/// ecosystem-snapshot.v1
+struct SnapshotDTO: Encodable {
+    struct Figure: Encodable {
+        let id: String
+        let level: Int
+        let exp: Int
+        let energy: Int
+    }
+
+    struct Relationship: Encodable {
+        let figures: [String]
+        let score: Int
+    }
+
+    struct SeedMemory: Encodable {
+        let id: String
+        let title: String
+        let ownerFigureId: String
+        let state: String
+        let objectId: String
+        let objectName: String
+    }
+
+    let schemaVersion = "ecosystem-snapshot.v1"
+    let figures: [Figure]
+    let relationships: [Relationship]
+    let seedMemories: [SeedMemory]
+
+    init(_ context: EcosystemContext) {
+        figures = FigureKind.allCases.compactMap { kind in
+            guard let state = context.figures[kind] else { return nil }
+            return Figure(id: kind.rawValue,
+                          level: min(10, max(1, state.level)),
+                          exp: min(100, max(0, state.exp)),
+                          energy: Int((min(1, max(0, state.energy)) * 100).rounded()))
+        }
+        relationships = context.relationships
+            .map { Relationship(figures: [$0.key.first.rawValue, $0.key.second.rawValue], score: $0.value) }
+            .sorted { $0.figures.joined() < $1.figures.joined() }
+        seedMemories = context.memories.compactMap { memory in
+            guard let seedID = memory.seedID, let owner = memory.figures.first else { return nil }
+            return SeedMemory(id: seedID, title: memory.text, ownerFigureId: owner.rawValue, state: "visible",
+                              objectId: seedID.replacingOccurrences(of: "memory_", with: "object_"),
+                              objectName: memory.objectName ?? memory.text)
+        }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, figures, relationships, seedMemories
+    }
+}
+
+/// client-session-response.v1
+struct SessionResponseDTO: Decodable {
+    struct Fallback: Decodable {
+        let interpretation: Bool
+        let resolution: Bool
+    }
+
+    let sessionId: String
     let interpretation: InterpretationDTO
-    let fallback: Bool
-    let promptVersion: String
+    let resolution: ResolutionDTO
+    let fallback: Fallback
 }
 
+/// event-interpretation.v1
 struct InterpretationDTO: Decodable {
     struct Figure: Decodable {
         let id: String
@@ -88,15 +155,23 @@ struct InterpretationDTO: Decodable {
         let voiceLine: String
     }
 
-    struct RelationshipCue: Decodable {
-        let figures: [String]
-        let reason: String
-    }
-
     let summary: String
     let turningPoint: String
     let figures: [Figure]
-    let relationshipCues: [RelationshipCue]
+}
+
+/// ecosystem-resolution.v1 — only what the app shows today. Evolution, raid
+/// and explanation feed the Screen 3–5 mock narrative (Sprint 3).
+struct ResolutionDTO: Decodable {
+    struct PromotedRelationship: Decodable {
+        let figures: [String]
+        let before: Int
+        let delta: Int
+        let after: Int
+        let reason: String
+    }
+
+    let promotedRelationship: PromotedRelationship
 }
 
 private struct ErrorEnvelopeDTO: Decodable {

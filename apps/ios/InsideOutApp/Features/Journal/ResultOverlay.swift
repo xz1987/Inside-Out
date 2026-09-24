@@ -56,6 +56,11 @@ struct ResultOverlay: View {
                 HStack(spacing: 8) {
                     Text("♥").foregroundStyle(Ink.heart)
                     Text("\(bond.firstFigure.displayName) & \(bond.secondFigure.displayName) grew closer")
+                    if let before = bond.before, let after = bond.after {
+                        Text("\(before) → \(after)")
+                            .monospacedDigit()
+                            .foregroundStyle(Ink.primary)
+                    }
                 }
                 .font(.rounded(13, .heavy))
                 .foregroundStyle(Ink.secondary)

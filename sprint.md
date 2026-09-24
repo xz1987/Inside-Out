@@ -42,16 +42,16 @@
 - [x] Domain A — `POST /api/v1/events/interpret`：prompt `input-v1`、strict JSON Schema 输出、服务端校验 + 1 次纠错重试、无 key 时关键词回退、503/502 错误语义
 - [ ] Domain A prompt 调优：summary 偶尔超过 30 词；uncertainties 偏多（目前 UI 不展示，影响不大）
 - [x] Domain B — `POST /api/v1/ecosystem/resolve`：确定性规则决定变形/掠夺/降级/Mask/关系前后值，LLM（`ecosystem-mvp-v1`）只写关系理由和三步解释，只看 summary 不看原文
-- [ ] iOS 改为调用 `/sessions/run`（需要把 Figure 状态/关系/种子记忆作为 snapshot 发给后端；等 Screen 3–5 开工时一起做）
+- [x] iOS 改为调用 `/sessions/run`：发送 Figure 状态 / 关系分数 / 种子记忆作为 snapshot；目前只用返回的 relationship，evolution / raid / explanation 留给 Sprint 3
 - [x] iOS 端接入 `/api/v1/events/interpret`（`APIClient` + `RemoteEventInterpreter`），后端不可达时回退本地关键词并在结果页标注 “Offline guess”
 - [ ] 确认前修改 interpretation：增减 Figure、调浓度、改 summary（MVP-FR-04）
 - [x] Most fed 视觉（C 位 + 更大 + 更亮）、EXP bar 当前值 → 本次增量动画
-- [~] Relationship before/after 数值：后端 Domain B 已返回 before/delta/after；iOS 仍只显示 +8 bond，待接 `/sessions/run`
+- [x] Relationship before/after：结果页显示 “Anger & Fear grew closer 12 → 19”，delta 由 Domain B 计算；保存时更新关系分数；单个 Figure 也显示与其最亲近 Figure 的关系（不画连线）；离线时由本地分数 +8 计算
 - [x] 查看原文 + Edit input：摘要卡片右上角 “原话” 图标 / 点卡片 → “What you said” 面板 → “Edit and ask again” 回到首页并预填打字弹层（语音输入也走文字编辑）
 
 ## Sprint 3 — Mock Narrative（PRD §32–35）
 
-- [~] Seed data：4 只 Figure 的 level / EXP / energy / 7 日趋势 + 3 条种子 memory 已加（`Models/FigureState.swift`）；threshold / owned memory / object 未加
+- [~] Seed data：4 只 Figure 的 level / EXP / energy / 7 日趋势；关系分数（与 contract fixture 一致）；5 条种子 memory，其中 4 条带 seedID + object（每个 Figure 各拥有一条，可被掠夺）；threshold 由后端 mock 规则决定
 - [ ] 显式状态机 `input_ready → … → memory_masked → demo_complete`（不依赖动画推断状态）
 - [ ] 所有 mock 结果标记 `simulation_mode: true`、`scenario_id: mvp_evolve_raid_mask_v1`，UI 显示 demo 标识
 - [ ] Screen 3 — EXP 达标 + 变形（Feed 最高者为 Evolved Figure）
@@ -130,3 +130,11 @@
 - `ResultOverlay`：摘要卡片加 `text.quote` 按钮，卡片可点；新增 `OriginalInputSheet`（显示完整原话、来源与时长、可选中复制、“Edit and ask again”）。
 - `JournalViewModel`：`lastInputText` 记录实际发送的文本；`editLastInput()` 回到首页，等结果页面板收起后（450 ms）打开预填好的打字弹层。
 - 模拟器验证：语音示例 → 结果 → 查看原话 → Edit → 首页打字弹层已预填原文。
+
+### 2026-09-24（Sprint 2 收尾②：iOS 改调 `/sessions/run` + 关系前后值，分支 `feat/result-details`）
+- `Models/FigureState.swift`：新增 `FigurePair`（无序 Figure 对）+ 种子关系分数；`MemoryEntry` 增加 `seedID` / `objectName`，种子记忆扩到 5 条（每个 Figure 拥有 1 条可掠夺的）；新增 `EcosystemContext`。
+- `RelationshipPromotion` 增加 `before` / `after`；`EventInterpreting.interpret` 增加 `context` 参数。
+- `APIClient`：改为 `runSession`（`/api/v1/sessions/run`，超时 45 s），新增 `SnapshotDTO`（由 context 生成，energy 0–1 → 0–100）、`SessionResponseDTO` / `ResolutionDTO`；移除不再使用的 `/events/interpret` 调用。
+- `RemoteEventInterpreter`：关系取自 Domain B 的 promotedRelationship（含单 Figure 情况）；后端不可达时用本地关系分数补 before。
+- `JournalViewModel`：`relationships` 状态；保存时写入 after。结果页底部显示 “X & Y grew closer  before → after”。
+- 模拟器验证（真实网关）：别车 → “Anger & Fear 12 → 19，+7 bond”；保存后打字 Mia 咖啡 → 仅 Joy，“Joy & Sadness 9 → 13”；再次别车 → “19 → 27”（保存生效）；停掉后端 → 离线仍显示 “19 → 27” 并标注 Offline guess。

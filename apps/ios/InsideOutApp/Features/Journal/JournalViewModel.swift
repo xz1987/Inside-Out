@@ -37,6 +37,7 @@ final class JournalViewModel: ObservableObject {
     @Published private(set) var baseline: [FigureKind: FigureState] = FigureState.seed
     @Published private(set) var figures: [FigureKind: FigureState] = FigureState.seed
     @Published private(set) var memories: [MemoryEntry] = MemoryEntry.seed()
+    @Published private(set) var relationships: [FigurePair: Int] = FigurePair.seedScores
     @Published private(set) var isSaved = false
     @Published private(set) var toast: String?
     @Published var selectedFigure: FigureKind = .anger
@@ -166,7 +167,9 @@ final class JournalViewModel: ObservableObject {
         defer { if navigation == started { isInterpreting = false } }
 
         do {
-            let result = try await interpreter.interpret(eventText: text, source: mode == .voice ? .voice : .message)
+            let context = EcosystemContext(figures: figures, relationships: relationships, memories: memories)
+            let result = try await interpreter.interpret(eventText: text, source: mode == .voice ? .voice : .message,
+                                                         context: context)
             guard navigation == started else { return }
             analysis = result
             lastInputText = text
@@ -193,6 +196,9 @@ final class JournalViewModel: ObservableObject {
         guard let analysis, !isSaved else { return }
         for feed in analysis.feeds {
             figures[feed.figure]?.feed(feed.feedAmount)
+        }
+        if let bond = analysis.promotedRelationship, let after = bond.after {
+            relationships[bond.pair] = after
         }
         for index in memories.indices { memories[index].isNew = false }
         memories.insert(

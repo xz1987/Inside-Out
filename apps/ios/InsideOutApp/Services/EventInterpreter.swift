@@ -1,7 +1,9 @@
 import Foundation
 
 protocol EventInterpreting {
-    func interpret(eventText: String, source: EventSource) async throws -> EventAnalysis
+    /// `context` is the current inner-world state; the backend needs it to
+    /// stage the ecosystem outcome, the local fallback ignores it.
+    func interpret(eventText: String, source: EventSource, context: EcosystemContext) async throws -> EventAnalysis
 }
 
 enum EventInterpreterError: LocalizedError {
@@ -54,7 +56,7 @@ struct LocalEventInterpreter: EventInterpreting {
         return matches
     }
 
-    func interpret(eventText: String, source: EventSource) async throws -> EventAnalysis {
+    func interpret(eventText: String, source: EventSource, context: EcosystemContext) async throws -> EventAnalysis {
         let trimmed = eventText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             throw EventInterpreterError.emptyInput

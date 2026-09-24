@@ -38,6 +38,11 @@ struct RelationshipPromotion: Codable, Equatable {
     let secondFigure: FigureKind
     let points: Int
     let reason: String
+    /// Score before this event; nil if unknown.
+    var before: Int?
+
+    var after: Int? { before.map { $0 + points } }
+    var pair: FigurePair { FigurePair(firstFigure, secondFigure) }
 }
 
 enum EventSource: String, Codable {
