@@ -56,7 +56,8 @@ there is no audio upload endpoint.
   "promptVersion": "input-v1", "traceId": "…" }
 ```
 
-- `text` is 15–4000 characters (already transcribed on the phone).
+- `text` is 1–4000 characters after trimming (already transcribed on the phone). No minimum;
+  the 4000 cap only guards against accidental huge pastes.
 - No key configured → keyword fallback (same logic as the iOS app), `fallback: true`.
 - Model output breaks the contract → one corrective retry, then `502 analysis_unavailable`.
 - Timeout / network / 5xx → `503 analysis_timeout` with `retryable: true`.

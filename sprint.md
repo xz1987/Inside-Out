@@ -3,7 +3,7 @@
 以 `docs/retrospective-memory-ios-prd.md` Section 28–37 为范围基准。
 每完成一项：勾选 checkbox，并在文末「进度日志」追加一条记录（日期 + 做了什么 + 相关文件/commit）。
 
-状态标记：`[x]` 完成 · `[~]` 进行中/部分完成 · `[ ]` 未开始
+状态标记：`[x]` 完成 · `[~]` 进行中/部分完成 · `[ ]` 未开始 · `[-]` 决定不做（附原因）
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## Sprint 1 — Functional Input（PRD §30）
 
-- [x] Message 输入：「or type it instead」底部弹层 + 15 字符下限校验
+- [x] Message 输入：「or type it instead」底部弹层；**不设最少字数**（只拦截空白），后端上限 4000 字符防误粘贴
 - [ ] 语音录制（AVFoundation）：录音按钮、时长、暂停/继续/结束、删除重录、录音中 active state
 - [ ] 语音转文字：已决定放在手机端（Apple Speech framework），后端只收文字、不做音频上传
 - [ ] 语音 ≥ 5 秒有效输入校验
@@ -44,7 +44,7 @@
 - [x] Domain B — `POST /api/v1/ecosystem/resolve`：确定性规则决定变形/掠夺/降级/Mask/关系前后值，LLM（`ecosystem-mvp-v1`）只写关系理由和三步解释，只看 summary 不看原文
 - [x] iOS 改为调用 `/sessions/run`：发送 Figure 状态 / 关系分数 / 种子记忆作为 snapshot；目前只用返回的 relationship，evolution / raid / explanation 留给 Sprint 3
 - [x] iOS 端接入 `/api/v1/events/interpret`（`APIClient` + `RemoteEventInterpreter`），后端不可达时回退本地关键词并在结果页标注 “Offline guess”
-- [ ] 确认前修改 interpretation：增减 Figure、调浓度、改 summary（MVP-FR-04）
+- [-] ~~确认前修改 interpretation：增减 Figure、调浓度、改 summary（MVP-FR-04 / MVP-UI-08）~~ — **决定不做**：分配完全交给 AI。用户可以自己选会导致不真实的行为，也与“情绪有自己的意志”的核心设定冲突。纠错途径改为“重新讲一遍”（Edit and ask again），用户能改讲法，不能改数值。结果页只展示“谁和谁得到加分”。
 - [x] Most fed 视觉（C 位 + 更大 + 更亮）、EXP bar 当前值 → 本次增量动画
 - [x] Relationship before/after：结果页显示 “Anger & Fear grew closer 12 → 19”，delta 由 Domain B 计算；保存时更新关系分数；单个 Figure 也显示与其最亲近 Figure 的关系（不画连线）；离线时由本地分数 +8 计算
 - [x] 查看原文 + Edit input：摘要卡片右上角 “原话” 图标 / 点卡片 → “What you said” 面板 → “Edit and ask again” 回到首页并预填打字弹层（语音输入也走文字编辑）
@@ -143,3 +143,14 @@
 - 新增 `prompts/input-v2.ts` 并设为默认（v1 保留，可用 `INPUT_PROMPT_VERSION=input-v1` 对比）。
 - 真实网关对比：摘要从 v1 的 17–30 词降到 10–13 词（中文 31 字），不再被结果卡片截断；uncertainties 最多 2 条；Figure 组合、Feed、速度（4–7 s）不变；prompt 注入样例仍未被带偏。
 - `.env.example` 不再写死 prompt 版本（改为注释），本地 `.env` 中对应两行已注释，默认跟随代码最新版本。
+
+### 2026-09-24（产品决策：取消用户手动调整解读）
+- 决定不实现 MVP-FR-04 / MVP-UI-08（确认前增减 Figure、调浓度、改摘要）。理由：情绪分配应完全由 AI 决定；允许手动选择会带来不真实的行为（例如为了喂某个 Figure 而调数值），与产品“情绪自己争夺记忆”的设定不符。
+- 保留 “Edit and ask again”（重新讲述后重新解读）作为唯一纠错途径，同时覆盖语音转写出错的情况。
+- 结果页维持现状：直接展示被喂的 Figure、Feed、关系加分，“Save this memory” 即确认。
+- 待办：在 PRD 中补一条决策记录，通知另一位开发者。
+
+### 2026-09-24（取消最少字数限制）
+- 产品决策：输入不设最少字数（PRD §30 原为 ≥15 字符），“tired” 这样的一个词也是有效的情绪瞬间。iOS 只拦截空白输入；后端改为 1–4000 字符，4000 仅防止误粘贴超长文本拖垮额度与响应时间。
+- 验证：输入 “tired” → Sadness +6，摘要 “You felt tired.”，关系 “Sadness & Joy 9 → 13”。后端测试 71 个通过（新增单个词可通过的用例）。
+- 排查粘贴问题：app 内长按 → Paste 正常；问题出在 Mac 剪贴板未同步到模拟器（Claude 内嵌模拟器面板不转发 ⌘V）。可用 `pbpaste | xcrun simctl pbcopy booted` 后长按粘贴，或在 Simulator.app 窗口中 ⌘V。

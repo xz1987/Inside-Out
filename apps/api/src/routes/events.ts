@@ -2,7 +2,8 @@ import { Router, type Request, type Response } from 'express';
 import type { InputInterpreter } from '../domains/input/inputInterpreter.js';
 import { AnalysisTimeoutError, AnalysisUnavailableError, type RitualInput } from '../domains/input/types.js';
 
-export const MIN_TEXT_LENGTH = 15;
+/** Safety cap against accidental huge pastes (quota/latency); no minimum — a
+ *  single word is a valid moment. */
 export const MAX_TEXT_LENGTH = 4000;
 
 type ParseResult = { ok: true; input: RitualInput } | { ok: false; message: string };
@@ -16,7 +17,7 @@ export function parseRitualInput(body: unknown): ParseResult {
   }
   if (typeof text !== 'string') return { ok: false, message: 'text must be a string' };
   const trimmed = text.trim();
-  if (trimmed.length < MIN_TEXT_LENGTH) return { ok: false, message: `text must be at least ${MIN_TEXT_LENGTH} characters` };
+  if (!trimmed) return { ok: false, message: 'text must not be empty' };
   if (trimmed.length > MAX_TEXT_LENGTH) return { ok: false, message: `text must be at most ${MAX_TEXT_LENGTH} characters` };
   if (importance !== undefined && (typeof importance !== 'number' || importance < 0 || importance > 1)) {
     return { ok: false, message: 'importance must be a number between 0 and 1' };

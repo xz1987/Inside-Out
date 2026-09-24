@@ -10,8 +10,6 @@ final class JournalViewModel: ObservableObject {
         case voice, typed
     }
 
-    static let minimumTypedLength = 15
-
     /// Stand-in transcript until real recording + transcription lands (Sprint 1).
     private static let demoSentences = [
         "So on my way home from work,",
@@ -152,8 +150,9 @@ final class JournalViewModel: ObservableObject {
     func submitTyped() {
         guard !isInterpreting else { return }
         let text = typedText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard text.count >= Self.minimumTypedLength else {
-            typeError = "Add a little more — at least \(Self.minimumTypedLength) characters."
+        // Any length counts — even "tired" is a real moment. Only blank is rejected.
+        guard !text.isEmpty else {
+            typeError = "Write a few words first."
             return
         }
         Task { await interpret(text, mode: .typed) }

@@ -135,7 +135,7 @@ describe('POST /api/v1/events/interpret', () => {
   });
 
   it.each([
-    [{ inputType: 'voice', text: 'too short' }, /at least 15/],
+    [{ inputType: 'voice', text: '   ' }, /must not be empty/],
     [{ inputType: 'fax', text: DRIVER }, /inputType/],
     [{ inputType: 'voice', text: DRIVER, importance: 3 }, /importance/],
     [{ inputType: 'voice', text: 'x'.repeat(4001) }, /at most/],
@@ -144,6 +144,13 @@ describe('POST /api/v1/events/interpret', () => {
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('invalid_input');
     expect(res.body.error.message).toMatch(message);
+  });
+
+  it('accepts a single word', async () => {
+    const res = await request(appWith(new FakeLlm([modelOutput()])))
+      .post('/api/v1/events/interpret')
+      .send({ inputType: 'message', text: 'tired' });
+    expect(res.status).toBe(200);
   });
 
   it('returns 503 retryable on timeout', async () => {
