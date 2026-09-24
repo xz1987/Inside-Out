@@ -87,11 +87,15 @@ function snapshotRules(value: EcosystemSnapshotV1): string[] {
 
 function resolutionRules(value: EcosystemResolutionV1): string[] {
   const errors: string[] = [];
-  const { promotedRelationship: rel, evolution, raid } = value;
-  if (rel) {
-    if (rel.figures[0] === rel.figures[1]) errors.push('/promotedRelationship figures must differ');
-    if (rel.after !== rel.before + rel.delta) errors.push('/promotedRelationship after must equal before + delta');
-  }
+  const { promotedRelationships: rels, evolution, raid } = value;
+  const seen = new Set<string>();
+  rels.forEach((rel, i) => {
+    if (rel.figures[0] === rel.figures[1]) errors.push(`/promotedRelationships/${i} figures must differ`);
+    if (rel.after !== rel.before + rel.delta) errors.push(`/promotedRelationships/${i} after must equal before + delta`);
+    const key = [...rel.figures].sort().join('+');
+    if (seen.has(key)) errors.push(`/promotedRelationships/${i} duplicates another pair`);
+    seen.add(key);
+  });
   if (evolution.afterExp !== evolution.beforeExp + evolution.feedApplied) errors.push('/evolution afterExp must equal beforeExp + feedApplied');
   if (raid.attackerFigureId === raid.victimFigureId) errors.push('/raid attacker and victim must differ');
   if (raid.attackerFigureId !== evolution.figureId) errors.push('/raid attacker must be the evolved Figure');
@@ -114,10 +118,27 @@ export const validateSnapshot = (value: unknown) =>
 export const validateResolution = (value: unknown) =>
   check<EcosystemResolutionV1>('ecosystem-resolution.v1', value, resolutionRules);
 
+/** Bonds only between Figures fed in this event, and every such pair present. */
+function sessionRules(v: ClientSessionResponseV1): string[] {
+  const fed = v.interpretation.figures.map((f) => f.id);
+  const errors: string[] = [];
+  v.resolution.promotedRelationships.forEach((rel, i) => {
+    if (!rel.figures.every((id) => fed.includes(id))) {
+      errors.push(`/resolution/promotedRelationships/${i} names a Figure that was not fed`);
+    }
+  });
+  const expected = (fed.length * (fed.length - 1)) / 2;
+  if (v.resolution.promotedRelationships.length !== expected) {
+    errors.push(`/resolution/promotedRelationships must have ${expected} pair(s) for ${fed.length} fed Figure(s)`);
+  }
+  return errors;
+}
+
 export const validateSessionResponse = (value: unknown) =>
   check<ClientSessionResponseV1>('client-session-response.v1', value, (v) => [
     ...interpretationRules(v.interpretation),
     ...resolutionRules(v.resolution),
+    ...sessionRules(v),
   ]);
 
 /** Validate or throw — for use right before data leaves the backend. */

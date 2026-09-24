@@ -53,8 +53,8 @@ struct EventAnalysis: Codable, Equatable {
     let summary: String
     /// Most-fed first.
     let feeds: [FigureFeed]
-    /// nil when only one Figure took part.
-    let promotedRelationship: RelationshipPromotion?
+    /// One per pair of Figures that took part together (none for a lone Figure).
+    let promotedRelationships: [RelationshipPromotion]
     let interpretationMode: String
     /// true when keyword matching produced this instead of the language model
     /// (backend unreachable, or backend has no API key).

@@ -2,13 +2,18 @@
   "schemaVersion": "ecosystem-resolution.v1",
   "simulationMode": true,
   "scenarioId": "mvp_evolve_raid_mask_v1",
-  "promotedRelationship": {
-    "figures": ["anger", "fear"],
-    "before": 12,
-    "delta": 8,
-    "after": 20,
-    "reason": "Both showed up in the same moment on the road."
-  },
+  "promotedRelationships": [
+    {
+      "figures": [
+        "anger",
+        "fear"
+      ],
+      "before": 12,
+      "delta": 8,
+      "after": 20,
+      "reason": "Both showed up in the same moment on the road."
+    }
+  ],
   "evolution": {
     "figureId": "anger",
     "beforeExp": 82,

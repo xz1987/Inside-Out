@@ -27,10 +27,10 @@ struct RemoteEventInterpreter: EventInterpreting {
         }
         guard !feeds.isEmpty else { throw APIError.invalidResponse }
 
-        // Only Figures that took part together bond; Domain B sends nil for a
-        // lone Figure, and anything naming an absent Figure is ignored.
+        // Only Figures that took part together bond; anything naming a Figure
+        // that wasn't fed is ignored.
         let fed = Set(feeds.map(\.figure))
-        let bond = response.resolution.promotedRelationship.flatMap { rel -> RelationshipPromotion? in
+        let bonds = response.resolution.promotedRelationships.compactMap { rel -> RelationshipPromotion? in
             let kinds = rel.figures.compactMap(FigureKind.init(rawValue:))
             guard kinds.count == 2, kinds[0] != kinds[1], kinds.allSatisfy(fed.contains) else { return nil }
             return RelationshipPromotion(firstFigure: kinds[0], secondFigure: kinds[1], points: rel.delta,
@@ -40,17 +40,20 @@ struct RemoteEventInterpreter: EventInterpreting {
         return EventAnalysis(
             summary: response.interpretation.summary,
             feeds: feeds,
-            promotedRelationship: bond,
+            promotedRelationships: bonds,
             interpretationMode: response.fallback.interpretation ? "Server keyword fallback" : "Language model",
             isKeywordGuess: response.fallback.interpretation
         )
     }
 
-    /// Offline: fill in the bond's starting score from local state.
+    /// Offline: fill in each bond's starting score from local state.
     private static func withLocalBond(_ analysis: EventAnalysis, context: EcosystemContext) -> EventAnalysis {
-        guard var bond = analysis.promotedRelationship else { return analysis }
-        bond.before = context.relationships[bond.pair] ?? 0
-        return EventAnalysis(summary: analysis.summary, feeds: analysis.feeds, promotedRelationship: bond,
+        let bonds = analysis.promotedRelationships.map { bond -> RelationshipPromotion in
+            var bond = bond
+            bond.before = context.relationships[bond.pair] ?? 0
+            return bond
+        }
+        return EventAnalysis(summary: analysis.summary, feeds: analysis.feeds, promotedRelationships: bonds,
                              interpretationMode: analysis.interpretationMode, isKeywordGuess: analysis.isKeywordGuess)
     }
 }

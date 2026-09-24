@@ -46,7 +46,8 @@
 - [x] iOS 端接入 `/api/v1/events/interpret`（`APIClient` + `RemoteEventInterpreter`），后端不可达时回退本地关键词并在结果页标注 “Offline guess”
 - [-] ~~确认前修改 interpretation：增减 Figure、调浓度、改 summary（MVP-FR-04 / MVP-UI-08）~~ — **决定不做**：分配完全交给 AI。用户可以自己选会导致不真实的行为，也与“情绪有自己的意志”的核心设定冲突。纠错途径改为“重新讲一遍”（Edit and ask again），用户能改讲法，不能改数值。结果页只展示“谁和谁得到加分”。
 - [x] Most fed 视觉（C 位 + 更大 + 更亮）、EXP bar 当前值 → 本次增量动画
-- [x] Relationship before/after：结果页显示 “Anger & Fear grew closer 12 → 19”，delta 由 Domain B 计算；保存时更新关系分数；**只有一个 Figure 时不产生、不显示关系**；离线时由本地分数 +8 计算
+- [x] Relationship before/after：共同参与的 Figure **两两**各一段（1 个 → 0 段，2 个 → 1 段，3 个 → 3 段），结果页逐行显示 “X & Y grew closer 12 → 19”，delta 由 Domain B 计算；保存时全部写入；离线时由本地分数 +8 计算
+- [x] 3 个 Figure 的结果页布局：最高者居中、另两个分列两侧，三列窄版名字/EXP/台词，底部关系列表；此前第三个被喂的 Figure 会被错误地显示成未参与
 - [x] 查看原文 + Edit input：摘要卡片右上角 “原话” 图标 / 点卡片 → “What you said” 面板 → “Edit and ask again” 回到首页并预填打字弹层（语音输入也走文字编辑）
 
 ## Sprint 3 — Mock Narrative（PRD §32–35）
@@ -162,3 +163,11 @@
 - 后端：`choosePromotedPair` 单 Figure 返回 null；Domain B prompt 升级为 `ecosystem-mvp-v2`（无关系时 relationshipReason 为 null，不允许编造关系），模型无法凭空生成关系。测试 74 个通过。
 - iOS：`ResolutionDTO.promotedRelationship` 可选，且只接受两个 Figure 都在本次被喂名单中的关系。
 - 验证（真实网关）：“tired” → 仅 Sadness +4，无关系；房租上涨 → Anger & Fear 12 → 20。
+
+### 2026-09-24（多段关系：共同参与的 Figure 两两建立关系，分支 `feat/multi-bonds`）
+- 产品决策：同一事件中出现的 Figure 两两之间都增加关系（3 个 Figure → 3 段）。PRD §31 C、MVP-UI-07、MVP-FR-03 已修订并保留说明。
+- Contract：`promotedRelationship`（单个/可空）改为 `promotedRelationships` 数组（0–3，最强在前）。v1 尚未发布，原地修改并在 contracts README 说明。Session 校验新增：关系只能在被喂的 Figure 之间，且数量必须等于 C(n,2)。
+- 后端：`choosePromotedPairs` 生成所有两两组合，delta=max(4, round((feedA+feedB)/4))；Domain B 文案改为 `relationshipReasons` 数组（数量不符或有空行 → 回退模板）；`ecosystem-mvp-v2` prompt 同步（未发布，原地修改）。测试 80 个通过。
+- iOS：`EventAnalysis.promotedRelationships`；新增共享的 `ResultLayout`（1/2/3 个 Figure 的坐标，舞台与结果页共用）和 `BondList`；3 个 Figure 时不画弧线，窄列（122pt）显示名字/EXP/台词；百分比标签不超出屏幕。
+- 修复：此前 3 个 Figure 时第三个被喂的 Figure 会被放到边缘、变暗且不显示 Feed。
+- 验证（真实网关）：朋友争执 → Anger/Joy/Fear 三列 + 3 段关系（Anger & Joy −4→3、Anger & Fear 12→19、Joy & Fear 0→5）；别车 → Anger/Fear/Sadness 三段；房租 → Anger/Fear 两列 + 弧线 + 1 段（12→21）。

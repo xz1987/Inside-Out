@@ -12,16 +12,16 @@ export interface ResolveResult {
 }
 
 interface Narration {
-  relationshipReason: string | null;
+  relationshipReasons: string[];
   explanation: [string, string, string];
 }
 
 const NARRATION_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['relationshipReason', 'explanation'],
+  required: ['relationshipReasons', 'explanation'],
   properties: {
-    relationshipReason: { type: ['string', 'null'], maxLength: 200 },
+    relationshipReasons: { type: 'array', items: { type: 'string', maxLength: 200 }, maxItems: 3 },
     explanation: { type: 'array', items: { type: 'string', maxLength: 160 }, minItems: 3, maxItems: 3 },
   },
 };
@@ -51,15 +51,16 @@ export class EcosystemDirector {
 
     try {
       const narration = await this.narrate(interpretation, snapshot, template);
-      const bond = template.promotedRelationship;
+      const bonds = template.promotedRelationships;
+      const reasons = narration.relationshipReasons.map((r) => r.trim());
       const worded: EcosystemResolutionV1 = {
         ...template,
-        // Only reword a bond that exists; the model can't create one.
-        promotedRelationship: bond && { ...bond, reason: narration.relationshipReason?.trim() ?? '' },
+        // Only reword bonds that exist; the model can't add or drop one.
+        promotedRelationships: bonds.map((bond, i) => ({ ...bond, reason: reasons[i] ?? '' })),
         explanation: narration.explanation.map((line) => line.trim()) as [string, string, string],
       };
       const checked = validateResolution(worded);
-      if (checked.ok && worded.explanation.every(Boolean) && (!bond || worded.promotedRelationship?.reason)) {
+      if (checked.ok && reasons.length === bonds.length && reasons.every(Boolean) && worded.explanation.every(Boolean)) {
         return { resolution: checked.value, fallback: false };
       }
       console.warn('ecosystem narration rejected', checked.ok ? 'empty text' : checked.errors);
@@ -80,10 +81,10 @@ export class EcosystemDirector {
     const story = {
       eventSummary: interpretation.summary,
       fedFigures: interpretation.figures.map((f) => ({ figure: name(f.id), feed: f.feed })),
-      promotedRelationship: decided.promotedRelationship && {
-        figures: decided.promotedRelationship.figures.map(name),
-        hint: decided.promotedRelationship.reason,
-      },
+      promotedRelationships: decided.promotedRelationships.map((rel) => ({
+        figures: rel.figures.map(name),
+        hint: rel.reason,
+      })),
       evolvedFigure: name(decided.evolution.figureId),
       victimFigure: name(decided.raid.victimFigureId),
       raidedMemory: { title: memory?.title ?? 'a memory', object: memory?.objectName ?? null },
@@ -95,7 +96,7 @@ export class EcosystemDirector {
       schema: NARRATION_SCHEMA,
     });
     if (!data || !Array.isArray(data.explanation) || data.explanation.length !== 3
-      || (data.relationshipReason !== null && typeof data.relationshipReason !== 'string')) {
+      || !Array.isArray(data.relationshipReasons) || !data.relationshipReasons.every((r) => typeof r === 'string')) {
       throw new Error('narration has the wrong shape');
     }
     return data;

@@ -39,12 +39,20 @@ export interface EcosystemSnapshotV1 {
   }[];
 }
 
+export interface PromotedRelationship {
+  figures: [FigureId, FigureId];
+  before: number;
+  delta: number;
+  after: number;
+  reason: string;
+}
+
 export interface EcosystemResolutionV1 {
   schemaVersion: 'ecosystem-resolution.v1';
   simulationMode: true;
   scenarioId: 'mvp_evolve_raid_mask_v1';
-  /** null when only one Figure took part in the event. */
-  promotedRelationship: { figures: [FigureId, FigureId]; before: number; delta: number; after: number; reason: string } | null;
+  /** One per pair of Figures that took part together; empty for a lone Figure. */
+  promotedRelationships: PromotedRelationship[];
   evolution: { figureId: FigureId; beforeExp: number; feedApplied: number; threshold: 100; afterExp: number; mocked: true };
   raid: {
     attackerFigureId: FigureId;

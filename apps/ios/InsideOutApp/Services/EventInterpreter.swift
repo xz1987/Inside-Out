@@ -103,12 +103,12 @@ struct LocalEventInterpreter: EventInterpreting {
         return EventAnalysis(
             summary: summary,
             feeds: feeds,
-            promotedRelationship: RelationshipPromotion(
+            promotedRelationships: [RelationshipPromotion(
                 firstFigure: selected[0],
                 secondFigure: selected[1],
                 points: 8,
                 reason: "They were both present in the same remembered event."
-            ),
+            )],
             interpretationMode: "Local prototype fallback",
             isKeywordGuess: true
         )

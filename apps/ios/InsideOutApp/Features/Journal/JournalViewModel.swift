@@ -196,8 +196,8 @@ final class JournalViewModel: ObservableObject {
         for feed in analysis.feeds {
             figures[feed.figure]?.feed(feed.feedAmount)
         }
-        if let bond = analysis.promotedRelationship, let after = bond.after {
-            relationships[bond.pair] = after
+        for bond in analysis.promotedRelationships {
+            if let after = bond.after { relationships[bond.pair] = after }
         }
         for index in memories.indices { memories[index].isNew = false }
         memories.insert(

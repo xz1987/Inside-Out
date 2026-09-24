@@ -94,15 +94,21 @@ describe('EcosystemResolutionV1 rules', () => {
     expect(validateResolution(bad).ok).toBe(false);
   });
 
-  it('allows no promoted relationship', () => {
+  it('allows no promoted relationships', () => {
     const solo = clone(resolution);
-    solo.promotedRelationship = null;
+    solo.promotedRelationships = [];
     expect(validateResolution(solo).ok).toBe(true);
   });
 
   it('checks relationship arithmetic', () => {
     const bad = clone(resolution);
-    bad.promotedRelationship.after = 99;
+    bad.promotedRelationships[0].after = 99;
+    expect(validateResolution(bad).ok).toBe(false);
+  });
+
+  it('rejects the same pair twice', () => {
+    const bad = clone(resolution);
+    bad.promotedRelationships.push({ ...bad.promotedRelationships[0], figures: ['fear', 'anger'] });
     expect(validateResolution(bad).ok).toBe(false);
   });
 
@@ -110,6 +116,22 @@ describe('EcosystemResolutionV1 rules', () => {
     const bad = clone(resolution);
     bad.evolution.figureId = 'fear';
     expect(validateResolution(bad).ok).toBe(false);
+  });
+});
+
+describe('ClientSessionResponseV1 rules', () => {
+  it('requires a bond for every pair of fed Figures', () => {
+    const bad = clone(session);
+    bad.resolution.promotedRelationships = [];
+    const result = validateSessionResponse(bad);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.join()).toMatch(/must have 1 pair/);
+  });
+
+  it('rejects a bond with a Figure that was not fed', () => {
+    const bad = clone(session);
+    bad.resolution.promotedRelationships[0].figures = ['anger', 'joy'];
+    expect(validateSessionResponse(bad).ok).toBe(false);
   });
 });
 

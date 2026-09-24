@@ -21,8 +21,18 @@ const soloJoy = (): EventInterpretationV1 => ({
   relationshipCues: [],
 });
 
+const trio = (): EventInterpretationV1 => ({
+  ...interpretation(),
+  figures: [
+    { id: 'sadness', concentration: 0.5, feed: 18, evidence: 'e', voiceLine: 'v', confidence: 0.9 },
+    { id: 'fear', concentration: 0.3, feed: 12, evidence: 'e', voiceLine: 'v', confidence: 0.8 },
+    { id: 'anger', concentration: 0.2, feed: 6, evidence: 'e', voiceLine: 'v', confidence: 0.7 },
+  ],
+  relationshipCues: [{ figures: ['fear', 'sadness'], reason: 'Doubt and hurt arrived together.' }],
+});
+
 const narration = () => ({
-  relationshipReason: 'Anger and Fear both stood guard on that road home.',
+  relationshipReasons: ['Anger and Fear both stood guard on that road home.'],
   explanation: [
     'Anger grew into a new shape after that drive home.',
     'It carried off “Mia brought you coffee without asking” from Joy.',
@@ -58,16 +68,27 @@ describe('scenario rules', () => {
   });
 
   it('promotes no bond when only one Figure took part', () => {
-    const { promotedRelationship, raid } = resolveScenario(soloJoy(), snapshot());
-    expect(promotedRelationship).toBeNull();
+    const { promotedRelationships, raid } = resolveScenario(soloJoy(), snapshot());
+    expect(promotedRelationships).toEqual([]);
     expect(raid.attackerFigureId).toBe('joy');
     expect(raid.victimFigureId).not.toBe('joy');
+  });
+
+  it('bonds every pair when three Figures took part, strongest first', () => {
+    const { promotedRelationships } = resolveScenario(trio(), snapshot());
+    expect(promotedRelationships.map((r) => r.figures)).toEqual([
+      ['sadness', 'fear'], ['sadness', 'anger'], ['fear', 'anger'],
+    ]);
+    expect(promotedRelationships.map((r) => r.delta)).toEqual([8, 6, 5]); // round((a+b)/4), min 4
+    expect(promotedRelationships[0].reason).toBe('Doubt and hurt arrived together.');
+    // anger–fear starts from its existing score of 12
+    expect(promotedRelationships[2]).toMatchObject({ before: 12, after: 17 });
   });
 
   it('treats a missing relationship as starting from 0', () => {
     const snap = snapshot();
     snap.relationships = [];
-    expect(resolveScenario(interpretation(), snap).promotedRelationship).toMatchObject({ before: 0, after: 8 });
+    expect(resolveScenario(interpretation(), snap).promotedRelationships[0]).toMatchObject({ before: 0, after: 8 });
   });
 
   it('throws ScenarioError when there is nothing to raid', () => {
@@ -77,7 +98,7 @@ describe('scenario rules', () => {
   });
 
   it('always produces a contract-valid resolution', () => {
-    for (const interp of [interpretation(), soloJoy()]) {
+    for (const interp of [interpretation(), soloJoy(), trio()]) {
       expect(validateResolution(resolveScenario(interp, snapshot())).ok).toBe(true);
     }
   });
@@ -91,27 +112,35 @@ describe('EcosystemDirector', () => {
 
     expect(fallback).toBe(false);
     expect(resolution.explanation).toEqual(narration().explanation);
-    expect(resolution.promotedRelationship?.reason).toBe(narration().relationshipReason);
-    expect({ ...resolution, explanation: template.explanation, promotedRelationship: template.promotedRelationship })
+    expect(resolution.promotedRelationships[0].reason).toBe(narration().relationshipReasons[0]);
+    expect({ ...resolution, explanation: template.explanation, promotedRelationships: template.promotedRelationships })
       .toEqual(template);
   });
 
-  it('accepts a null reason for a lone Figure and never invents a bond', async () => {
-    const reply = { ...narration(), relationshipReason: 'Joy and Sadness are old friends.' };
-    const { resolution, fallback } = await new EcosystemDirector(new FakeLlm([reply])).resolve(soloJoy(), snapshot());
+  it('words every bond for three Figures, in order', async () => {
+    const reply = { ...narration(), relationshipReasons: ['one', 'two', 'three'] };
+    const { resolution, fallback } = await new EcosystemDirector(new FakeLlm([reply])).resolve(trio(), snapshot());
     expect(fallback).toBe(false);
-    expect(resolution.promotedRelationship).toBeNull();
-
-    const nullReply = { ...narration(), relationshipReason: null };
-    const second = await new EcosystemDirector(new FakeLlm([nullReply])).resolve(soloJoy(), snapshot());
-    expect(second.fallback).toBe(false);
-    expect(second.resolution.promotedRelationship).toBeNull();
+    expect(resolution.promotedRelationships.map((r) => r.reason)).toEqual(['one', 'two', 'three']);
   });
 
-  it('falls back when the model drops the reason for a real bond', async () => {
-    const reply = { ...narration(), relationshipReason: null };
-    const { fallback } = await new EcosystemDirector(new FakeLlm([reply])).resolve(interpretation(), snapshot());
+  it('never lets the model add a bond for a lone Figure', async () => {
+    const reply = { ...narration(), relationshipReasons: ['Joy and Sadness are old friends.'] };
+    const { resolution, fallback } = await new EcosystemDirector(new FakeLlm([reply])).resolve(soloJoy(), snapshot());
+    expect(resolution.promotedRelationships).toEqual([]);
+    expect(fallback).toBe(true); // count mismatch → template wording
+
+    const empty = { ...narration(), relationshipReasons: [] };
+    const second = await new EcosystemDirector(new FakeLlm([empty])).resolve(soloJoy(), snapshot());
+    expect(second.fallback).toBe(false);
+    expect(second.resolution.promotedRelationships).toEqual([]);
+  });
+
+  it('falls back when the model returns the wrong number of reasons', async () => {
+    const reply = { ...narration(), relationshipReasons: ['only one'] };
+    const { fallback, resolution } = await new EcosystemDirector(new FakeLlm([reply])).resolve(trio(), snapshot());
     expect(fallback).toBe(true);
+    expect(resolution.promotedRelationships).toHaveLength(3);
   });
 
   it('sends the summary but never the raw memory text', async () => {
@@ -125,9 +154,10 @@ describe('EcosystemDirector', () => {
 
   it.each([
     ['LLM error', new OpenAI.APIConnectionTimeoutError()],
-    ['wrong shape', { relationshipReason: 'x', explanation: ['only one'] }],
-    ['empty line', { relationshipReason: 'x', explanation: ['a', '', 'c'] }],
-    ['too long', { relationshipReason: 'x', explanation: ['a'.repeat(200), 'b', 'c'] }],
+    ['wrong shape', { relationshipReasons: ['x'], explanation: ['only one'] }],
+    ['empty line', { relationshipReasons: ['x'], explanation: ['a', '', 'c'] }],
+    ['empty reason', { relationshipReasons: [' '], explanation: ['a', 'b', 'c'] }],
+    ['too long', { relationshipReasons: ['x'], explanation: ['a'.repeat(200), 'b', 'c'] }],
   ])('falls back to the template on %s', async (_label, reply) => {
     const { resolution, fallback } = await new EcosystemDirector(new FakeLlm([reply])).resolve(interpretation(), snapshot());
     expect(fallback).toBe(true);

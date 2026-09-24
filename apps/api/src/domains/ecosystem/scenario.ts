@@ -31,22 +31,26 @@ export interface PromotedPair {
 }
 
 /**
- * Which relationship this event promotes: the two most-fed Figures, using
- * Domain A's cue for the reason. Bonds only grow between Figures that took
- * part in the same event, so a lone Figure promotes nothing (this replaces
- * PRD §31 C's "existing memory connection" fallback).
+ * Which relationships this event promotes: every pair of Figures that took
+ * part together (0 pairs for one Figure, 1 for two, 3 for three), strongest
+ * pair first. Bonds only grow between Figures that shared the event — this
+ * replaces PRD §31 C's single-pair / "existing memory connection" rule.
  */
-export function choosePromotedPair(interpretation: EventInterpretationV1): PromotedPair | null {
-  const [first, second] = interpretation.figures;
-  if (!second) return null;
-
-  const figures: [FigureId, FigureId] = [first.id, second.id];
-  const cue = interpretation.relationshipCues.find((c) => samePair(c.figures, figures));
-  return {
-    figures,
-    reason: cue?.reason ?? 'Both took part in the same remembered moment.',
-    delta: Math.max(4, Math.round((first.feed + second.feed) / 4)),
-  };
+export function choosePromotedPairs(interpretation: EventInterpretationV1): PromotedPair[] {
+  const fed = interpretation.figures;
+  const pairs: PromotedPair[] = [];
+  for (let i = 0; i < fed.length; i++) {
+    for (let j = i + 1; j < fed.length; j++) {
+      const figures: [FigureId, FigureId] = [fed[i].id, fed[j].id];
+      const cue = interpretation.relationshipCues.find((c) => samePair(c.figures, figures));
+      pairs.push({
+        figures,
+        reason: cue?.reason ?? 'Both took part in the same remembered moment.',
+        delta: Math.max(4, Math.round((fed[i].feed + fed[j].feed) / 4)),
+      });
+    }
+  }
+  return pairs.sort((a, b) => b.delta - a.delta);
 }
 
 /**
@@ -86,8 +90,8 @@ export function templateExplanation(evolved: FigureId, victim: FigureId): [strin
 /** Builds the full resolution with template wording. */
 export function resolveScenario(interpretation: EventInterpretationV1, snapshot: EcosystemSnapshotV1): EcosystemResolutionV1 {
   const evolved = interpretation.figures[0];
-  const pair = choosePromotedPair(interpretation);
-  const before = pair ? snapshot.relationships.find((r) => samePair(r.figures, pair.figures))?.score ?? 0 : 0;
+  const scoreOf = (figures: [FigureId, FigureId]) =>
+    snapshot.relationships.find((r) => samePair(r.figures, figures))?.score ?? 0;
   const target = chooseRaidTarget(evolved.id, interpretation, snapshot);
   // Staged evolution: start exactly `feed` short of the threshold so this
   // event's Feed tips it over (PRD §32 mock rule).
@@ -97,13 +101,10 @@ export function resolveScenario(interpretation: EventInterpretationV1, snapshot:
     schemaVersion: 'ecosystem-resolution.v1',
     simulationMode: true,
     scenarioId: SCENARIO_ID,
-    promotedRelationship: pair && {
-      figures: pair.figures,
-      before,
-      delta: pair.delta,
-      after: before + pair.delta,
-      reason: pair.reason,
-    },
+    promotedRelationships: choosePromotedPairs(interpretation).map((pair) => {
+      const before = scoreOf(pair.figures);
+      return { figures: pair.figures, before, delta: pair.delta, after: before + pair.delta, reason: pair.reason };
+    }),
     evolution: {
       figureId: evolved.id,
       beforeExp,

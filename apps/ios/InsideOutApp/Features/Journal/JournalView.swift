@@ -131,20 +131,15 @@ private struct StageView: View {
         return looking(slot, at: mic)
     }
 
-    /// Most-fed Figure takes centre stage; the uninvolved two wait at the edges.
+    /// Fed Figures stand where `ResultLayout` puts them; the rest wait,
+    /// dimmed, at the edges.
     private func resultSlot(for kind: FigureKind) -> StageSlot {
-        let fed = vm.analysis?.feeds.map(\.figure) ?? []
-        if fed.first == kind {
-            // A lone Figure takes the centre; with a partner it shifts left.
-            return fed.count == 1
-                ? StageSlot(x: 195, y: 305, size: 132, mood: .fed, glow: 0.95, lookY: 0.2)
-                : StageSlot(x: 102, y: 305, size: 124, mood: .fed, glow: 0.95, lookX: 0.8, lookY: 0.2)
+        let fed = Array((vm.analysis?.feeds.map(\.figure) ?? []).prefix(3))
+        if let index = fed.firstIndex(of: kind) {
+            let slot = ResultLayout.slots(count: fed.count)[index]
+            return StageSlot(x: slot.x, y: slot.y, size: slot.size, mood: .fed, glow: slot.glow, lookX: slot.lookX, lookY: 0.2)
         }
-        if fed.count > 1, fed[1] == kind {
-            return StageSlot(x: 288, y: 305, size: 100, mood: .fed, glow: 0.6, lookX: -0.8, lookY: 0.2)
-        }
-        // Uninvolved Figures wait, dimmed, at the edges.
-        let edges: [(x: CGFloat, y: CGFloat, look: Double)] = [(14, 250, 1), (378, 250, -1), (14, 372, 1), (378, 372, -1)]
+        let edges = ResultLayout.edges(count: fed.count)
         let index = FigureKind.allCases.filter { !fed.contains($0) }.firstIndex(of: kind) ?? 0
         let edge = edges[min(index, edges.count - 1)]
         return StageSlot(x: edge.x, y: edge.y, size: 46, dim: true, glow: 0.1, lookX: edge.look, lookY: 0.2)
