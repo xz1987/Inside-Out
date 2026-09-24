@@ -86,7 +86,7 @@ private struct StageView: View {
                     .zIndex(kind == .fear ? 4 : 6)
             }
 
-            MicButton(listening: listening, diameter: micSize, action: vm.micTapped)
+            MicButton(listening: listening, thinking: vm.isInterpreting, diameter: micSize, action: vm.micTapped)
                 .offset(x: mic.x - micSize / 2, y: mic.y - micSize / 2)
                 .opacity(result ? 0 : 1)
                 .scaleEffect(result ? 0.3 : 1)
@@ -135,16 +135,19 @@ private struct StageView: View {
     private func resultSlot(for kind: FigureKind) -> StageSlot {
         let fed = vm.analysis?.feeds.map(\.figure) ?? []
         if fed.first == kind {
-            return StageSlot(x: 102, y: 305, size: 124, mood: .fed, glow: 0.95, lookX: 0.8, lookY: 0.2)
+            // A lone Figure takes the centre; with a partner it shifts left.
+            return fed.count == 1
+                ? StageSlot(x: 195, y: 305, size: 132, mood: .fed, glow: 0.95, lookY: 0.2)
+                : StageSlot(x: 102, y: 305, size: 124, mood: .fed, glow: 0.95, lookX: 0.8, lookY: 0.2)
         }
         if fed.count > 1, fed[1] == kind {
             return StageSlot(x: 288, y: 305, size: 100, mood: .fed, glow: 0.6, lookX: -0.8, lookY: 0.2)
         }
-        let others = FigureKind.allCases.filter { !fed.contains($0) }
-        if others.first == kind {
-            return StageSlot(x: 14, y: 250, size: 46, dim: true, glow: 0.1, lookX: 1, lookY: 0.2)
-        }
-        return StageSlot(x: 378, y: 250, size: 46, dim: true, glow: 0.1, lookX: -1, lookY: 0.2)
+        // Uninvolved Figures wait, dimmed, at the edges.
+        let edges: [(x: CGFloat, y: CGFloat, look: Double)] = [(14, 250, 1), (378, 250, -1), (14, 372, 1), (378, 372, -1)]
+        let index = FigureKind.allCases.filter { !fed.contains($0) }.firstIndex(of: kind) ?? 0
+        let edge = edges[min(index, edges.count - 1)]
+        return StageSlot(x: edge.x, y: edge.y, size: 46, dim: true, glow: 0.1, lookX: edge.look, lookY: 0.2)
     }
 
     private func looking(_ slot: StageSlot, at point: CGPoint) -> StageSlot {
@@ -157,6 +160,7 @@ private struct StageView: View {
 
 private struct MicButton: View {
     let listening: Bool
+    let thinking: Bool
     let diameter: CGFloat
     let action: () -> Void
 
@@ -173,7 +177,7 @@ private struct MicButton: View {
             Button(action: action) {
                 VStack(spacing: 8) {
                     MicGlyph()
-                    Text(listening ? "Listening…" : "Tap to tell me")
+                    Text(thinking ? "Thinking…" : listening ? "Listening…" : "Tap to tell me")
                         .font(.rounded(14, .heavy))
                         .foregroundStyle(Ink.primary)
                 }
@@ -313,7 +317,7 @@ private struct ListeningOverlay: View {
         ZStack(alignment: .topLeading) {
             HStack(spacing: 8) {
                 PulsingDot()
-                Text("Listening · \(vm.listeningClock)")
+                Text(vm.isInterpreting ? "Your Figures are thinking it over" : "Listening · \(vm.listeningClock)")
                     .monospacedDigit()
             }
             .font(.rounded(13, .heavy))
@@ -326,8 +330,29 @@ private struct ListeningOverlay: View {
                 .frame(width: 330, height: 220, alignment: .bottom)
                 .offset(x: 30, y: 112)
 
+            if let error = vm.interpretError {
+                VStack(spacing: 2) {
+                    Text(error)
+                    Text("Tap Done to try again").foregroundStyle(Ink.muted)
+                }
+                .font(.rounded(13, .bold))
+                .foregroundStyle(Color(hex: 0xC9463A))
+                .multilineTextAlignment(.center)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.white.opacity(0.8)))
+                .frame(width: 390)
+                .offset(y: 636)
+                .transition(.opacity)
+            }
+
             Button(action: vm.finishListening) {
-                Text("Done")
+                HStack(spacing: 8) {
+                    if vm.isInterpreting {
+                        ProgressView().tint(.white).controlSize(.small)
+                    }
+                    Text(vm.isInterpreting ? "Thinking…" : "Done")
+                }
                     .font(.rounded(15, .heavy))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 34)
@@ -336,6 +361,7 @@ private struct ListeningOverlay: View {
                     .shadow(color: Ink.primary.opacity(0.25), radius: 12, y: 10)
             }
             .buttonStyle(PressableStyle())
+            .disabled(vm.isInterpreting)
             .opacity(vm.canFinishListening ? 1 : 0.4)
             .animation(.easeInOut(duration: 0.4), value: vm.canFinishListening)
             .frame(width: 390)
@@ -491,7 +517,12 @@ private struct TypeSheet: View {
             }
 
             Button(action: vm.submitTyped) {
-                Text("Share with my Figures")
+                HStack(spacing: 10) {
+                    if vm.isInterpreting {
+                        ProgressView().tint(.white)
+                    }
+                    Text(vm.isInterpreting ? "Your Figures are listening…" : "Share with my Figures")
+                }
                     .font(.rounded(16, .heavy))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -499,6 +530,7 @@ private struct TypeSheet: View {
                     .background(Capsule().fill(Ink.primary))
             }
             .buttonStyle(PressableStyle())
+            .disabled(vm.isInterpreting)
 
             Spacer(minLength: 0)
         }

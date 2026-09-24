@@ -40,10 +40,19 @@ struct RelationshipPromotion: Codable, Equatable {
     let reason: String
 }
 
+enum EventSource: String, Codable {
+    case voice, message
+}
+
 struct EventAnalysis: Codable, Equatable {
     let summary: String
+    /// Most-fed first.
     let feeds: [FigureFeed]
-    let promotedRelationship: RelationshipPromotion
+    /// nil when only one Figure took part.
+    let promotedRelationship: RelationshipPromotion?
     let interpretationMode: String
+    /// true when keyword matching produced this instead of the language model
+    /// (backend unreachable, or backend has no API key).
+    var isKeywordGuess = false
 }
 

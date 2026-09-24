@@ -1,7 +1,7 @@
 import Foundation
 
 protocol EventInterpreting {
-    func interpret(eventText: String) async throws -> EventAnalysis
+    func interpret(eventText: String, source: EventSource) async throws -> EventAnalysis
 }
 
 enum EventInterpreterError: LocalizedError {
@@ -54,7 +54,7 @@ struct LocalEventInterpreter: EventInterpreting {
         return matches
     }
 
-    func interpret(eventText: String) async throws -> EventAnalysis {
+    func interpret(eventText: String, source: EventSource) async throws -> EventAnalysis {
         let trimmed = eventText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             throw EventInterpreterError.emptyInput
@@ -107,7 +107,8 @@ struct LocalEventInterpreter: EventInterpreting {
                 points: 8,
                 reason: "They were both present in the same remembered event."
             ),
-            interpretationMode: "Local prototype fallback"
+            interpretationMode: "Local prototype fallback",
+            isKeywordGuess: true
         )
     }
 

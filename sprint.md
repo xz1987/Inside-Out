@@ -15,7 +15,7 @@
 - [x] Feed 数值以游戏化方式浮现在 Figure 上方（+18、EXP 条、bond +8）
 
 - [ ] 结果页 Replay 按钮接真实录音回放（目前只切换文字）
-- [ ] 本地摘要：summary 目前是原文截断，接 LLM 后改为真正的摘要
+- [x] 摘要：接后端后由 LLM 生成（离线回退时仍是原文截断）
 
 > 注：设计稿加了 Figures / Memories 两个 tab，超出 PRD §29 的线性 MVP 结构；数据目前只在内存里，重启即重置。
 
@@ -27,9 +27,9 @@
 - [ ] 语音 ≥ 5 秒有效输入校验
 - [x] 语音为主入口、文字为次入口（UI 层面）
 - [~] Listening 屏：转写逐行展示 + Figure 按关键词实时变大已完成，但转写内容目前是写死的示例句（等真实录音接入后替换）
-- [ ] 错误状态：麦克风权限拒绝（回退文字 + 系统设置入口）、转录失败、分析失败保留 input、断网 retry
+- [~] 错误状态：分析失败保留 input + 「Tap Done to try again」✓、后端不可达回退本地 ✓；麦克风权限拒绝、转录失败待语音接入后做
 - [ ] 可选 prompt chips
-- [ ] Loading 状态（新 UI 暂无）。**接后端后必须补**：Domain A 实测 3–7 秒
+- [x] Loading 状态：Listening 页 Done/麦克风显示 “Thinking…”，打字弹层按钮显示 “Your Figures are listening…”；离开页面后迟到的结果会被丢弃
 
 ## Sprint 2 — Functional Interpretation（PRD §31、§37–41）
 
@@ -42,7 +42,7 @@
 - [x] Domain A — `POST /api/v1/events/interpret`：prompt `input-v1`、strict JSON Schema 输出、服务端校验 + 1 次纠错重试、无 key 时关键词回退、503/502 错误语义
 - [ ] Domain A prompt 调优：summary 偶尔超过 30 词；uncertainties 偏多（目前 UI 不展示，影响不大）
 - [ ] Domain B — Ecosystem Director（关系促进与后续互动）
-- [ ] iOS 端接入后端，本地解析器保留为 fallback
+- [x] iOS 端接入 `/api/v1/events/interpret`（`APIClient` + `RemoteEventInterpreter`），后端不可达时回退本地关键词并在结果页标注 “Offline guess”
 - [ ] 确认前修改 interpretation：增减 Figure、调浓度、改 summary（MVP-FR-04）
 - [x] Most fed 视觉（C 位 + 更大 + 更亮）、EXP bar 当前值 → 本次增量动画
 - [ ] Relationship before/after 数值（目前只显示 +N bond）
@@ -108,3 +108,11 @@
 - `reasoning_effort` 实测（gpt-5-mini / Cornell）：默认 9–16 s；`low` 3.4–7.5 s 质量基本不变；`minimal` 2.5–3.8 s 但会凑数加 Figure。默认设为 `low`，可用 `*_REASONING_EFFORT` 覆盖，`off` 省略参数。
 - 真实样例（`npm run try:input`）：英文别车、中文组会被否定、Mia 送咖啡、买牛奶（只给 1 个 Figure）、prompt 注入（未被带偏）、中文交论文后空落 — 结果均合理，中文输入全程中文输出。
 - 测试 45 个全部通过（FakeLlm，不耗额度）；本地 HTTP 端到端调用通过。
+
+### 2026-09-24（iOS 接入 Domain A，分支 `feat/input-ios-flow`）
+- 新增 `Services/APIClient.swift`（默认 `http://localhost:3000`，可用 scheme 环境变量 `API_BASE_URL` 覆盖；DTO 对应 `event-interpretation.v1`）、`Services/RemoteEventInterpreter.swift`（后端不可达 → 本地关键词；5xx → 抛错让用户重试；把 relationshipCues 映射成结果页的 bond）。
+- `EventAnalysis.promotedRelationship` 改为可选（只有 1 个 Figure 时不显示连线），新增 `isKeywordGuess`；`EventInterpreting` 增加 `source` 参数。
+- `JournalViewModel`：`isInterpreting` / `interpretError`、导航计数防止迟到结果覆盖当前页面。
+- 结果页：单个 Figure 居中、100% 标签隐藏、未参与的 Figure 分散在两侧；离线时摘要下方显示 “Offline guess from keywords”。
+- 模拟器验证（真实 Cornell 网关）：语音示例 → Anger+Fear（7.6 s）；打字 “Mia 送咖啡” → 仅 Joy 居中（3.8 s）；停掉后端 → 离线回退并标注；无效 key → 显示 “Something went wrong / Tap Done to try again”，输入保留；日志中无 key。
+- 注意：`http://localhost` 在模拟器上无需 ATS 例外；真机需改 `API_BASE_URL` 为局域网 IP / HTTPS 隧道（PRD §45.2）。

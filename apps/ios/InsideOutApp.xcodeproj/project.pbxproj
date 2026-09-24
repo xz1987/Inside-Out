@@ -18,6 +18,8 @@
 		A10000000000000000000011 /* FiguresScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* FiguresScreen.swift */; };
 		A10000000000000000000012 /* MemoriesScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* MemoriesScreen.swift */; };
 		A10000000000000000000013 /* FigureState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* FigureState.swift */; };
+		A10000000000000000000014 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* APIClient.swift */; };
+		A10000000000000000000015 /* RemoteEventInterpreter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000015 /* RemoteEventInterpreter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +35,8 @@
 		B10000000000000000000011 /* FiguresScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FiguresScreen.swift; sourceTree = "<group>"; };
 		B10000000000000000000012 /* MemoriesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoriesScreen.swift; sourceTree = "<group>"; };
 		B10000000000000000000013 /* FigureState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigureState.swift; sourceTree = "<group>"; };
+		B10000000000000000000014 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		B10000000000000000000015 /* RemoteEventInterpreter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteEventInterpreter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +90,8 @@
 			isa = PBXGroup;
 			children = (
 				B10000000000000000000003 /* EventInterpreter.swift */,
+				B10000000000000000000014 /* APIClient.swift */,
+				B10000000000000000000015 /* RemoteEventInterpreter.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -191,6 +197,8 @@
 				A10000000000000000000001 /* InsideOutApp.swift in Sources */,
 				A10000000000000000000002 /* EventAnalysis.swift in Sources */,
 				A10000000000000000000003 /* EventInterpreter.swift in Sources */,
+				A10000000000000000000014 /* APIClient.swift in Sources */,
+				A10000000000000000000015 /* RemoteEventInterpreter.swift in Sources */,
 				A10000000000000000000006 /* Theme.swift in Sources */,
 				A10000000000000000000007 /* FigureView.swift in Sources */,
 				A10000000000000000000008 /* JournalViewModel.swift in Sources */,

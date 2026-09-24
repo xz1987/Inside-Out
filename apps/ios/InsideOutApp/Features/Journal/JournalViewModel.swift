@@ -40,10 +40,22 @@ final class JournalViewModel: ObservableObject {
     @Published private(set) var isSaved = false
     @Published private(set) var toast: String?
     @Published var selectedFigure: FigureKind = .anger
+    /// A request to the backend is in flight.
+    @Published private(set) var isInterpreting = false
+    /// Shown on the Listening screen; the transcript is kept so Done retries.
+    @Published private(set) var interpretError: String?
 
-    private let interpreter = LocalEventInterpreter()
+    private let interpreter: EventInterpreting
+    /// Only used for the live Figure reactions while listening.
+    private let keywordSignals = LocalEventInterpreter()
     private var listenTask: Task<Void, Never>?
     private var pendingTask: Task<Void, Never>?
+    /// Bumped on every navigation so late results from an abandoned request are dropped.
+    private var navigation = 0
+
+    init(interpreter: EventInterpreting = RemoteEventInterpreter()) {
+        self.interpreter = interpreter
+    }
 
     // MARK: - Derived state
 
@@ -71,7 +83,7 @@ final class JournalViewModel: ObservableObject {
 
     /// How strongly each Figure reacts to what has been said so far (0–2).
     var listeningLevels: [FigureKind: Int] {
-        interpreter.signalCounts(in: transcriptSoFar).mapValues { min(2, $0) }
+        keywordSignals.signalCounts(in: transcriptSoFar).mapValues { min(2, $0) }
     }
 
     var capturedLabel: String {
@@ -85,6 +97,9 @@ final class JournalViewModel: ObservableObject {
     func go(_ destination: Screen) {
         listenTask?.cancel()
         pendingTask?.cancel()
+        navigation += 1
+        isInterpreting = false
+        interpretError = nil
         withAnimation(.easeInOut(duration: 0.4)) {
             isTyping = false
             toast = nil
@@ -117,8 +132,9 @@ final class JournalViewModel: ObservableObject {
         }
     }
 
+    /// Also the retry action after an error — the transcript is kept.
     func finishListening() {
-        guard canFinishListening else { return }
+        guard canFinishListening, !isInterpreting else { return }
         recordedSeconds = Int((Double(heardWords) * 0.21).rounded())
         let text = transcriptSoFar
         listenTask?.cancel()
@@ -131,6 +147,7 @@ final class JournalViewModel: ObservableObject {
     }
 
     func submitTyped() {
+        guard !isInterpreting else { return }
         let text = typedText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard text.count >= Self.minimumTypedLength else {
             typeError = "Add a little more — at least \(Self.minimumTypedLength) characters."
@@ -140,8 +157,15 @@ final class JournalViewModel: ObservableObject {
     }
 
     private func interpret(_ text: String, mode: InputMode) async {
+        let started = navigation
+        interpretError = nil
+        typeError = nil
+        withAnimation(.easeInOut(duration: 0.3)) { isInterpreting = true }
+        defer { if navigation == started { isInterpreting = false } }
+
         do {
-            let result = try await interpreter.interpret(eventText: text)
+            let result = try await interpreter.interpret(eventText: text, source: mode == .voice ? .voice : .message)
+            guard navigation == started else { return }
             analysis = result
             inputMode = mode
             capturedAt = Date()
@@ -150,7 +174,13 @@ final class JournalViewModel: ObservableObject {
             if mode == .typed { typedText = "" }
             go(.result)
         } catch {
-            typeError = error.localizedDescription
+            guard navigation == started else { return }
+            let message = error.localizedDescription
+            if mode == .typed {
+                typeError = message
+            } else {
+                withAnimation(.easeOut(duration: 0.3)) { interpretError = message }
+            }
         }
     }
 

@@ -11,6 +11,9 @@ struct ResultOverlay: View {
 
     private var primary: FigureFeed { analysis.feeds[0] }
     private var secondary: FigureFeed? { analysis.feeds.count > 1 ? analysis.feeds[1] : nil }
+    private var bond: RelationshipPromotion? { analysis.promotedRelationship }
+    /// Centre x of the most-fed Figure; must match `resultSlot` in JournalView.
+    private var primaryX: CGFloat { secondary == nil ? 195 : 102 }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -18,10 +21,10 @@ struct ResultOverlay: View {
                 .offset(x: 20, y: 62)
                 .appear()
 
-            if let secondary {
+            if let secondary, let bond {
                 BondArc(from: primary.figure.palette.base, to: secondary.figure.palette.base)
                 bondHeart
-                Text("+\(analysis.promotedRelationship.points) bond")
+                Text("+\(bond.points) bond")
                     .font(.rounded(13, .black))
                     .foregroundStyle(.white)
                     .padding(.vertical, 4)
@@ -38,17 +41,20 @@ struct ResultOverlay: View {
                     .offset(x: 203, y: 380)
             }
 
-            feedNumber(primary, size: 34, centerX: 102, top: 190, delay: 0.4)
-            percentPill(primary).offset(x: 140, y: 336)
+            feedNumber(primary, size: 34, centerX: primaryX, top: 190, delay: 0.4)
+            if secondary != nil {
+                // A lone Figure is always 100% — the pill would add nothing.
+                percentPill(primary).offset(x: primaryX + 38, y: 336)
+            }
             FedColumn(feed: primary, before: vm.baseline[primary.figure], filled: expFilled)
-                .offset(x: 17, y: 380)
+                .offset(x: primaryX - 85, y: 380)
 
             Sparkles()
 
-            if secondary != nil {
+            if let bond {
                 HStack(spacing: 8) {
                     Text("♥").foregroundStyle(Ink.heart)
-                    Text(bondLabel)
+                    Text("\(bond.firstFigure.displayName) & \(bond.secondFigure.displayName) grew closer")
                 }
                 .font(.rounded(13, .heavy))
                 .foregroundStyle(Ink.secondary)
@@ -89,16 +95,11 @@ struct ResultOverlay: View {
         }
     }
 
-    private var bondLabel: String {
-        let pair = analysis.promotedRelationship
-        return "\(pair.firstFigure.displayName) & \(pair.secondFigure.displayName) grew closer"
-    }
-
     private var summaryCard: some View {
         // Replay sits on the timestamp row (not below the text as in the
         // design) so the card stays clear of the "+N" pop above the Figure.
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 6) {
                 Text(vm.capturedLabel.uppercased())
                     .font(.rounded(12, .heavy))
                     .tracking(1)
@@ -112,6 +113,14 @@ struct ResultOverlay: View {
                 .font(.rounded(16, .bold))
                 .lineSpacing(2)
                 .lineLimit(2)
+            if analysis.isKeywordGuess {
+                // Be honest when the language model wasn't used.
+                Label("Offline guess from keywords — couldn’t reach your Figures", systemImage: "wifi.slash")
+                    .font(.rounded(12, .bold))
+                    .foregroundStyle(Ink.muted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
         }
         .padding(.vertical, 14)
         .padding(.horizontal, 18)
@@ -131,6 +140,8 @@ struct ResultOverlay: View {
                     .overlay(Image(systemName: "play.fill").font(.system(size: 8)).foregroundStyle(.white).offset(x: 1))
                 Text((replaying ? "Playing… " : "Replay · ") + "0:" + String(format: "%02d", vm.recordedSeconds))
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .fixedSize()
             }
             .font(.rounded(12, .heavy))
             .foregroundStyle(Ink.primary)
