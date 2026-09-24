@@ -10,8 +10,14 @@
 		A10000000000000000000001 /* InsideOutApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* InsideOutApp.swift */; };
 		A10000000000000000000002 /* EventAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* EventAnalysis.swift */; };
 		A10000000000000000000003 /* EventInterpreter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* EventInterpreter.swift */; };
-		A10000000000000000000004 /* DailyEventViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* DailyEventViewModel.swift */; };
-		A10000000000000000000005 /* DailyEventView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* DailyEventView.swift */; };
+		A10000000000000000000006 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* Theme.swift */; };
+		A10000000000000000000007 /* FigureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007 /* FigureView.swift */; };
+		A10000000000000000000008 /* JournalViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* JournalViewModel.swift */; };
+		A10000000000000000000009 /* JournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000009 /* JournalView.swift */; };
+		A10000000000000000000010 /* ResultOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* ResultOverlay.swift */; };
+		A10000000000000000000011 /* FiguresScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* FiguresScreen.swift */; };
+		A10000000000000000000012 /* MemoriesScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* MemoriesScreen.swift */; };
+		A10000000000000000000013 /* FigureState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* FigureState.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -19,8 +25,14 @@
 		B10000000000000000000001 /* InsideOutApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsideOutApp.swift; sourceTree = "<group>"; };
 		B10000000000000000000002 /* EventAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventAnalysis.swift; sourceTree = "<group>"; };
 		B10000000000000000000003 /* EventInterpreter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventInterpreter.swift; sourceTree = "<group>"; };
-		B10000000000000000000004 /* DailyEventViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyEventViewModel.swift; sourceTree = "<group>"; };
-		B10000000000000000000005 /* DailyEventView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyEventView.swift; sourceTree = "<group>"; };
+		B10000000000000000000006 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		B10000000000000000000007 /* FigureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigureView.swift; sourceTree = "<group>"; };
+		B10000000000000000000008 /* JournalViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalViewModel.swift; sourceTree = "<group>"; };
+		B10000000000000000000009 /* JournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalView.swift; sourceTree = "<group>"; };
+		B10000000000000000000010 /* ResultOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultOverlay.swift; sourceTree = "<group>"; };
+		B10000000000000000000011 /* FiguresScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FiguresScreen.swift; sourceTree = "<group>"; };
+		B10000000000000000000012 /* MemoriesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoriesScreen.swift; sourceTree = "<group>"; };
+		B10000000000000000000013 /* FigureState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigureState.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +77,7 @@
 			isa = PBXGroup;
 			children = (
 				B10000000000000000000002 /* EventAnalysis.swift */,
+				B10000000000000000000013 /* FigureState.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -80,7 +93,7 @@
 		D10000000000000000000005 /* Features */ = {
 			isa = PBXGroup;
 			children = (
-				D10000000000000000000007 /* DailyEvent */,
+				D10000000000000000000007 /* Journal */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -93,13 +106,18 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		D10000000000000000000007 /* DailyEvent */ = {
+		D10000000000000000000007 /* Journal */ = {
 			isa = PBXGroup;
 			children = (
-				B10000000000000000000004 /* DailyEventViewModel.swift */,
-				B10000000000000000000005 /* DailyEventView.swift */,
+				B10000000000000000000006 /* Theme.swift */,
+				B10000000000000000000007 /* FigureView.swift */,
+				B10000000000000000000008 /* JournalViewModel.swift */,
+				B10000000000000000000009 /* JournalView.swift */,
+				B10000000000000000000010 /* ResultOverlay.swift */,
+				B10000000000000000000011 /* FiguresScreen.swift */,
+				B10000000000000000000012 /* MemoriesScreen.swift */,
 			);
-			path = DailyEvent;
+			path = Journal;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -173,8 +191,14 @@
 				A10000000000000000000001 /* InsideOutApp.swift in Sources */,
 				A10000000000000000000002 /* EventAnalysis.swift in Sources */,
 				A10000000000000000000003 /* EventInterpreter.swift in Sources */,
-				A10000000000000000000004 /* DailyEventViewModel.swift in Sources */,
-				A10000000000000000000005 /* DailyEventView.swift in Sources */,
+				A10000000000000000000006 /* Theme.swift in Sources */,
+				A10000000000000000000007 /* FigureView.swift in Sources */,
+				A10000000000000000000008 /* JournalViewModel.swift in Sources */,
+				A10000000000000000000009 /* JournalView.swift in Sources */,
+				A10000000000000000000010 /* ResultOverlay.swift in Sources */,
+				A10000000000000000000011 /* FiguresScreen.swift in Sources */,
+				A10000000000000000000012 /* MemoriesScreen.swift in Sources */,
+				A10000000000000000000013 /* FigureState.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -224,6 +248,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Inside Out";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourteam.InsideOutMVP;
@@ -242,6 +267,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Inside Out";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourteam.InsideOutMVP;

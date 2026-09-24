@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><style>@keyframes fg-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes fg-sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}@keyframes fg-puff{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}@keyframes fg-tremble{0%,100%{transform:translateX(0)}25%{transform:translateX(-1.3px)}75%{transform:translateX(1.3px)}}@keyframes fg-steam{0%{opacity:0;transform:translateY(4px) scale(.6)}40%{opacity:.95}100%{opacity:0;transform:translateY(-12px) scale(1.15)}}@keyframes fg-tear{0%,55%{transform:translateY(0) rotate(45deg);opacity:1}100%{transform:translateY(9px) rotate(45deg);opacity:0}}</style></helmet>
+<div style="{{ outer }}">
+  <div style="{{ scale }}">
+    <div style="position:absolute;left:20px;top:98px;width:60px;height:10px;border-radius:50%;background:rgba(80,60,120,.16);filter:blur(3px)"></div>
+    <div style="{{ anim }}">
+      <div style="{{ halo }}"></div>
+      <div style="{{ body }}"></div>
+      <div style="{{ hi }}"></div>
+      <div style="{{ face }}">
+        <div style="{{ blushL }}"></div>
+        <div style="{{ blushR }}"></div>
+        <sc-if value="{{ joyIdle }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;left:33px;top:40px;width:8px;height:11px;border-radius:50%;background:#3b2d4a"></div>
+          <div style="position:absolute;left:59px;top:40px;width:8px;height:11px;border-radius:50%;background:#3b2d4a"></div>
+          <div style="position:absolute;left:37px;top:54px;width:26px;height:13px;box-sizing:border-box;border:3.5px solid #3b2d4a;border-top:none;border-radius:0 0 16px 16px"></div>
+        </sc-if>
+        <sc-if value="{{ sadIdle }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;left:28px;top:35px;width:15px;height:3.5px;border-radius:2px;background:#3b2d4a;transform:rotate(-16deg)"></div>
+          <div style="position:absolute;left:57px;top:35px;width:15px;height:3.5px;border-radius:2px;background:#3b2d4a;transform:rotate(16deg)"></div>
+          <div style="position:absolute;left:33px;top:44px;width:8px;height:9px;border-radius:50%;background:#3b2d4a"></div>
+          <div style="position:absolute;left:59px;top:44px;width:8px;height:9px;border-radius:50%;background:#3b2d4a"></div>
+          <div style="position:absolute;left:41px;top:62px;width:18px;height:8px;box-sizing:border-box;border:3.5px solid #3b2d4a;border-bottom:none;border-radius:10px 10px 0 0"></div>
+          <div style="position:absolute;left:31px;top:56px;width:7px;height:7px;background:#e6f3ff;border:1.5px solid #8fb6ee;border-radius:0 50% 50% 50%;animation:fg-tear 3.2s ease-in infinite"></div>
+        </sc-if>
+        <sc-if value="{{ angerIdle }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;left:27px;top:36px;width:17px;height:4px;border-radius:2px;background:#3b2d4a;transform:rotate(20deg)"></div>
+          <div style="position:absolute;left:56px;top:36px;width:17px;height:4px;border-radius:2px;background:#3b2d4a;transform:rotate(-20deg)"></div>
+          <div style="position:absolute;left:34px;top:45px;width:8px;height:9px;border-radius:50%;background:#3b2d4a"></div>
+          <div style="position:absolute;left:58px;top:45px;width:8px;height:9px;border-radius:50%;background:#3b2d4a"></div>
+          <div style="position:absolute;left:40px;top:62px;width:20px;height:7px;box-sizing:border-box;border:3.5px solid #3b2d4a;border-bottom:none;border-radius:10px 10px 0 0"></div>
+          <div style="position:absolute;left:72px;top:-6px;width:13px;height:13px;border-radius:50%;background:rgba(255,255,255,.9);animation:fg-steam 1.8s ease-out infinite"></div>
+          <div style="position:absolute;left:84px;top:4px;width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.85);animation:fg-steam 1.8s ease-out .6s infinite"></div>
+        </sc-if>
+        <sc-if value="{{ fearIdle }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;left:29px;top:27px;width:13px;height:3px;border-radius:2px;background:#3b2d4a;transform:rotate(-12deg)"></div>
+          <div style="position:absolute;left:58px;top:27px;width:13px;height:3px;border-radius:2px;background:#3b2d4a;transform:rotate(12deg)"></div>
+          <div style="position:absolute;left:26px;top:34px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(60,40,90,.25)"><div style="position:absolute;left:7px;top:7px;width:8px;height:8px;border-radius:50%;background:#3b2d4a"></div></div>
+          <div style="position:absolute;left:54px;top:34px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(60,40,90,.25)"><div style="position:absolute;left:5px;top:7px;width:8px;height:8px;border-radius:50%;background:#3b2d4a"></div></div>
+          <div style="position:absolute;left:44px;top:61px;width:12px;height:11px;box-sizing:border-box;border-radius:50%;border:3px solid #3b2d4a"></div>
+        </sc-if>
+        <sc-if value="{{ fed }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;left:29px;top:42px;width:15px;height:8px;box-sizing:border-box;border:3.5px solid #3b2d4a;border-bottom:none;border-radius:10px 10px 0 0"></div>
+          <div style="position:absolute;left:56px;top:42px;width:15px;height:8px;box-sizing:border-box;border:3.5px solid #3b2d4a;border-bottom:none;border-radius:10px 10px 0 0"></div>
+          <div style="position:absolute;left:38px;top:55px;width:24px;height:13px;overflow:hidden;background:#6b2a3e;border-radius:0 0 14px 14px"><div style="position:absolute;left:6px;top:6px;width:12px;height:9px;border-radius:50%;background:#ff8fa3"></div></div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:200,&quot;height&quot;:200},&quot;kind&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;joy&quot;,&quot;sadness&quot;,&quot;anger&quot;,&quot;fear&quot;],&quot;default&quot;:&quot;joy&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;size&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:120,&quot;tsType&quot;:&quot;number&quot;},&quot;mood&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;idle&quot;,&quot;fed&quot;],&quot;default&quot;:&quot;idle&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;dim&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;glow&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:1,&quot;step&quot;:0.05,&quot;default&quot;:0.3,&quot;tsType&quot;:&quot;number&quot;},&quot;lookX&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:-1,&quot;max&quot;:1,&quot;step&quot;:0.1,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;},&quot;lookY&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:-1,&quot;max&quot;:1,&quot;step&quot;:0.1,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;},&quot;still&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;gloss&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;glossy&quot;,&quot;soft&quot;],&quot;default&quot;:&quot;glossy&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const P = {
+      joy: ['#fff6c2', '#ffd84d', '#f2a81d', '255,196,60', 'fg-bounce 2.6s ease-in-out infinite'],
+      sadness: ['#e4eaff', '#94a9f3', '#5f76d4', '120,145,240', 'fg-sway 4.2s ease-in-out infinite'],
+      anger: ['#ffd6cc', '#ff8b78', '#e4574a', '255,115,95', 'fg-puff 1.6s ease-in-out infinite'],
+      fear: ['#f1e6ff', '#bc9df2', '#8a66d6', '170,130,240', 'fg-tremble .32s linear infinite']
+    };
+    const k = P[this.props.kind] ? this.props.kind : 'joy';
+    const [l, b, d, g, a] = P[k];
+    const size = this.props.size ?? 120, glow = this.props.glow ?? 0.3;
+    const fed = this.props.mood === 'fed', soft = this.props.gloss === 'soft', dim = !!this.props.dim;
+    const lx = this.props.lookX ?? 0, ly = this.props.lookY ?? 0;
+    const ease = 'cubic-bezier(.3,1.3,.5,1)';
+    const blush = { position: 'absolute', top: 55, width: 14, height: 9, borderRadius: '50%', background: 'rgba(255,105,140,.45)', filter: 'blur(1.5px)', opacity: fed ? 1 : 0.6 };
+    return {
+      outer: { position: 'relative', width: size, height: size, opacity: dim ? 0.45 : 1, filter: dim ? 'saturate(.5)' : 'none', transition: `width .9s ${ease},height .9s ${ease},opacity .6s,filter .6s` },
+      scale: { position: 'absolute', left: 0, top: 0, width: 100, height: 100, transformOrigin: '0 0', transform: `scale(${size / 100})`, transition: `transform .9s ${ease}` },
+      anim: { position: 'absolute', inset: 0, animation: this.props.still ? 'none' : (fed ? 'fg-bounce 1.8s ease-in-out infinite' : a) },
+      halo: { position: 'absolute', inset: -20, borderRadius: '50%', background: `radial-gradient(circle, rgba(${g},${0.2 + glow * 0.5}) 35%, rgba(${g},0) 70%)`, transition: 'background .6s' },
+      body: { position: 'absolute', inset: 0, borderRadius: '50%', background: soft ? `radial-gradient(circle at 35% 30%, ${l} 0%, ${b} 55%, ${d} 115%)` : `radial-gradient(circle at 32% 26%, #fff 0%, ${l} 13%, ${b} 52%, ${d} 100%)`, boxShadow: `inset -6px -10px 18px rgba(0,0,0,.08), inset 6px 8px 14px rgba(255,255,255,.5), 0 10px 24px rgba(${g},.35)` },
+      hi: { position: 'absolute', left: 18, top: 10, width: 36, height: 20, borderRadius: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,0))', transform: 'rotate(-22deg)', opacity: soft ? 0.35 : 0.85 },
+      face: { position: 'absolute', inset: 0, transform: `translate(${lx * 6}px,${ly * 4}px)`, transition: 'transform .8s ease' },
+      blushL: { ...blush, left: 17 }, blushR: { ...blush, left: 69 },
+      joyIdle: k === 'joy' && !fed, sadIdle: k === 'sadness' && !fed, angerIdle: k === 'anger' && !fed, fearIdle: k === 'fear' && !fed, fed
+    };
+  }
+}
+</script>
+</body>
+</html>

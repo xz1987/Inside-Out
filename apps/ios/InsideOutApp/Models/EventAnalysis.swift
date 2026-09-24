@@ -27,6 +27,8 @@ struct FigureFeed: Identifiable, Codable, Equatable {
     let feedAmount: Int
     let concentration: Double
     let evidence: String
+    /// A short first-person line the Figure "says" on the result screen.
+    let voiceLine: String
 
     var id: FigureKind { figure }
 }
