@@ -11,7 +11,8 @@
     "simulationMode": { "type": "boolean", "const": true },
     "scenarioId": { "type": "string", "const": "mvp_evolve_raid_mask_v1" },
     "promotedRelationship": {
-      "type": "object",
+      "type": ["object", "null"],
+      "description": "The bond between Figures that took part together in this event; null when only one Figure took part.",
       "additionalProperties": false,
       "required": ["figures", "before", "delta", "after", "reason"],
       "properties": {

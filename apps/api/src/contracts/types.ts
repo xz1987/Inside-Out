@@ -43,7 +43,8 @@ export interface EcosystemResolutionV1 {
   schemaVersion: 'ecosystem-resolution.v1';
   simulationMode: true;
   scenarioId: 'mvp_evolve_raid_mask_v1';
-  promotedRelationship: { figures: [FigureId, FigureId]; before: number; delta: number; after: number; reason: string };
+  /** null when only one Figure took part in the event. */
+  promotedRelationship: { figures: [FigureId, FigureId]; before: number; delta: number; after: number; reason: string } | null;
   evolution: { figureId: FigureId; beforeExp: number; feedApplied: number; threshold: 100; afterExp: number; mocked: true };
   raid: {
     attackerFigureId: FigureId;

@@ -70,7 +70,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     appEnv: env.APP_ENV || 'development',
     llm: {
       input: domain('input', 'INPUT', 'input-v2', 'low'),
-      ecosystem: domain('ecosystem', 'ECOSYSTEM', 'ecosystem-mvp-v1', 'minimal'),
+      ecosystem: domain('ecosystem', 'ECOSYSTEM', 'ecosystem-mvp-v2', 'minimal'),
     },
   };
 }

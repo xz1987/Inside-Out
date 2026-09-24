@@ -11,8 +11,6 @@ import type {
 
 export const SCENARIO_ID = 'mvp_evolve_raid_mask_v1' as const;
 export const EXP_THRESHOLD = 100;
-/** Bond gain when only one Figure was fed and we reuse an existing pair. */
-const SOLO_BOND_DELTA = 4;
 
 export class ScenarioError extends Error {
   readonly code = 'scenario_unavailable';
@@ -33,29 +31,22 @@ export interface PromotedPair {
 }
 
 /**
- * Which relationship this event promotes. Prefers Domain A's cue for the two
- * most-fed Figures; with a single fed Figure, falls back to its strongest
- * existing bond ("Existing memory connection", PRD §31 C).
+ * Which relationship this event promotes: the two most-fed Figures, using
+ * Domain A's cue for the reason. Bonds only grow between Figures that took
+ * part in the same event, so a lone Figure promotes nothing (this replaces
+ * PRD §31 C's "existing memory connection" fallback).
  */
-export function choosePromotedPair(interpretation: EventInterpretationV1, snapshot: EcosystemSnapshotV1): PromotedPair {
+export function choosePromotedPair(interpretation: EventInterpretationV1): PromotedPair | null {
   const [first, second] = interpretation.figures;
+  if (!second) return null;
 
-  if (second) {
-    const figures: [FigureId, FigureId] = [first.id, second.id];
-    const cue = interpretation.relationshipCues.find((c) => samePair(c.figures, figures));
-    return {
-      figures,
-      reason: cue?.reason ?? 'Both took part in the same remembered moment.',
-      delta: Math.max(4, Math.round((first.feed + second.feed) / 4)),
-    };
-  }
-
-  const strongest = snapshot.relationships
-    .filter((r) => r.figures.includes(first.id))
-    .sort((a, b) => b.score - a.score)[0];
-  const partner = strongest?.figures.find((id) => id !== first.id)
-    ?? snapshot.figures.map((f) => f.id).find((id) => id !== first.id)!;
-  return { figures: [first.id, partner], reason: 'Existing memory connection.', delta: SOLO_BOND_DELTA };
+  const figures: [FigureId, FigureId] = [first.id, second.id];
+  const cue = interpretation.relationshipCues.find((c) => samePair(c.figures, figures));
+  return {
+    figures,
+    reason: cue?.reason ?? 'Both took part in the same remembered moment.',
+    delta: Math.max(4, Math.round((first.feed + second.feed) / 4)),
+  };
 }
 
 /**
@@ -95,8 +86,8 @@ export function templateExplanation(evolved: FigureId, victim: FigureId): [strin
 /** Builds the full resolution with template wording. */
 export function resolveScenario(interpretation: EventInterpretationV1, snapshot: EcosystemSnapshotV1): EcosystemResolutionV1 {
   const evolved = interpretation.figures[0];
-  const pair = choosePromotedPair(interpretation, snapshot);
-  const before = snapshot.relationships.find((r) => samePair(r.figures, pair.figures))?.score ?? 0;
+  const pair = choosePromotedPair(interpretation);
+  const before = pair ? snapshot.relationships.find((r) => samePair(r.figures, pair.figures))?.score ?? 0 : 0;
   const target = chooseRaidTarget(evolved.id, interpretation, snapshot);
   // Staged evolution: start exactly `feed` short of the threshold so this
   // event's Feed tips it over (PRD §32 mock rule).
@@ -106,7 +97,7 @@ export function resolveScenario(interpretation: EventInterpretationV1, snapshot:
     schemaVersion: 'ecosystem-resolution.v1',
     simulationMode: true,
     scenarioId: SCENARIO_ID,
-    promotedRelationship: {
+    promotedRelationship: pair && {
       figures: pair.figures,
       before,
       delta: pair.delta,

@@ -1476,7 +1476,9 @@ They both participated in the same memory.
 - 两只 Figure；
 - Relationship before / after；
 - 被促进的原因；
-- 如果只有一个 Figure 得到 Feed，使用该 Figure 与 mock memory 中已有 co-owner 的关系作为 demo pair，并明确显示 `Existing memory connection`。
+- 关系只在**本次事件中共同出现的 Figure** 之间产生：只有一个 Figure 得到 Feed 时，不促进任何关系，也不显示关系区块。
+
+> **修订（2026-09-24）**：原条款为“只有一个 Figure 得到 Feed 时，使用该 Figure 与 mock memory 中已有 co-owner 的关系作为 demo pair，并显示 `Existing memory connection`”。这会让没有参与这件事的 Figure 也获得关系加分，与“关系来自共同经历”的设定不符，已删除。
 
 #### D. Confirmation
 
@@ -1512,7 +1514,7 @@ analysis_result:
 
 - `MVP-UI-05` 用户能看出哪只 Figure 获得最多 Feed；
 - `MVP-UI-06` 每次 Feed 必须显示基于 input 的简短理由；
-- `MVP-UI-07` 必须显示且只显示一段被促进的 relationship；
+- `MVP-UI-07` 有两个及以上 Figure 获得 Feed 时，显示且只显示一段被促进的 relationship；只有一个 Figure 时不显示；
 - `MVP-UI-08` 用户可以修改 Figure mix 后再确认；
 - `MVP-UI-09` 确认后进入固定 transformation mock。
 
@@ -1803,7 +1805,7 @@ input_ready
 
 - `MVP-FR-01` 用户可以通过 voice 或 message 输入一个 daily event。
 - `MVP-FR-02` 系统返回 event summary、fed figures、Feed amount 和 concentration。
-- `MVP-FR-03` 系统返回且只返回一段 promoted relationship。
+- `MVP-FR-03` 两个及以上 Figure 获得 Feed 时，系统返回且只返回一段 promoted relationship；只有一个 Figure 时返回空（`promotedRelationship: null`）。
 - `MVP-FR-04` 用户可以在确认前修改 interpretation。
 - `MVP-FR-05` Feed 最高的 Figure 被选为 Evolved Figure，或明确切换至预设 demo Figure。
 - `MVP-FR-06` EXP threshold 和 transformation 使用固定 mock 数据。

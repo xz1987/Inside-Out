@@ -2,6 +2,7 @@ import type { EcosystemResolutionV1, EcosystemSnapshotV1, EventInterpretationV1 
 import { validateResolution } from '../../contracts/validate.js';
 import type { JsonLlm } from '../../llm/llmClient.js';
 import { ECOSYSTEM_PROMPT_MVP_V1 } from './prompts/ecosystem-mvp-v1.js';
+import { ECOSYSTEM_PROMPT_MVP_V2 } from './prompts/ecosystem-mvp-v2.js';
 import { resolveScenario } from './scenario.js';
 
 export interface ResolveResult {
@@ -11,7 +12,7 @@ export interface ResolveResult {
 }
 
 interface Narration {
-  relationshipReason: string;
+  relationshipReason: string | null;
   explanation: [string, string, string];
 }
 
@@ -20,12 +21,15 @@ const NARRATION_SCHEMA = {
   additionalProperties: false,
   required: ['relationshipReason', 'explanation'],
   properties: {
-    relationshipReason: { type: 'string', maxLength: 200 },
+    relationshipReason: { type: ['string', 'null'], maxLength: 200 },
     explanation: { type: 'array', items: { type: 'string', maxLength: 160 }, minItems: 3, maxItems: 3 },
   },
 };
 
-const PROMPTS: Record<string, string> = { 'ecosystem-mvp-v1': ECOSYSTEM_PROMPT_MVP_V1 };
+const PROMPTS: Record<string, string> = {
+  'ecosystem-mvp-v1': ECOSYSTEM_PROMPT_MVP_V1,
+  'ecosystem-mvp-v2': ECOSYSTEM_PROMPT_MVP_V2,
+};
 
 /**
  * Domain B (PRD §39.2). Outcomes come from deterministic scenario rules; the
@@ -35,7 +39,7 @@ const PROMPTS: Record<string, string> = { 'ecosystem-mvp-v1': ECOSYSTEM_PROMPT_M
 export class EcosystemDirector {
   private readonly system: string;
 
-  constructor(private readonly llm: JsonLlm, readonly promptVersion = 'ecosystem-mvp-v1') {
+  constructor(private readonly llm: JsonLlm, readonly promptVersion = 'ecosystem-mvp-v2') {
     const prompt = PROMPTS[promptVersion];
     if (!prompt) throw new Error(`Unknown ecosystem prompt version: ${promptVersion}`);
     this.system = prompt;
@@ -47,13 +51,15 @@ export class EcosystemDirector {
 
     try {
       const narration = await this.narrate(interpretation, snapshot, template);
+      const bond = template.promotedRelationship;
       const worded: EcosystemResolutionV1 = {
         ...template,
-        promotedRelationship: { ...template.promotedRelationship, reason: narration.relationshipReason.trim() },
+        // Only reword a bond that exists; the model can't create one.
+        promotedRelationship: bond && { ...bond, reason: narration.relationshipReason?.trim() ?? '' },
         explanation: narration.explanation.map((line) => line.trim()) as [string, string, string],
       };
       const checked = validateResolution(worded);
-      if (checked.ok && worded.explanation.every(Boolean) && worded.promotedRelationship.reason) {
+      if (checked.ok && worded.explanation.every(Boolean) && (!bond || worded.promotedRelationship?.reason)) {
         return { resolution: checked.value, fallback: false };
       }
       console.warn('ecosystem narration rejected', checked.ok ? 'empty text' : checked.errors);
@@ -74,10 +80,9 @@ export class EcosystemDirector {
     const story = {
       eventSummary: interpretation.summary,
       fedFigures: interpretation.figures.map((f) => ({ figure: name(f.id), feed: f.feed })),
-      promotedRelationship: {
+      promotedRelationship: decided.promotedRelationship && {
         figures: decided.promotedRelationship.figures.map(name),
         hint: decided.promotedRelationship.reason,
-        bothInEvent: decided.promotedRelationship.figures.every((id) => interpretation.figures.some((f) => f.id === id)),
       },
       evolvedFigure: name(decided.evolution.figureId),
       victimFigure: name(decided.raid.victimFigureId),
@@ -89,7 +94,8 @@ export class EcosystemDirector {
       schemaName: 'ecosystem_narration',
       schema: NARRATION_SCHEMA,
     });
-    if (!data || !Array.isArray(data.explanation) || data.explanation.length !== 3 || typeof data.relationshipReason !== 'string') {
+    if (!data || !Array.isArray(data.explanation) || data.explanation.length !== 3
+      || (data.relationshipReason !== null && typeof data.relationshipReason !== 'string')) {
       throw new Error('narration has the wrong shape');
     }
     return data;

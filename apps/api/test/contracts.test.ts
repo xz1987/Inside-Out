@@ -94,6 +94,12 @@ describe('EcosystemResolutionV1 rules', () => {
     expect(validateResolution(bad).ok).toBe(false);
   });
 
+  it('allows no promoted relationship', () => {
+    const solo = clone(resolution);
+    solo.promotedRelationship = null;
+    expect(validateResolution(solo).ok).toBe(true);
+  });
+
   it('checks relationship arithmetic', () => {
     const bad = clone(resolution);
     bad.promotedRelationship.after = 99;

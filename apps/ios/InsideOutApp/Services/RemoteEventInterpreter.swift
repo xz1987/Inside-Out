@@ -27,14 +27,15 @@ struct RemoteEventInterpreter: EventInterpreting {
         }
         guard !feeds.isEmpty else { throw APIError.invalidResponse }
 
-        // Domain B always promotes exactly one pair — for a lone Figure it's
-        // an existing bond with a Figure that sat this event out.
-        let rel = response.resolution.promotedRelationship
-        let kinds = rel.figures.compactMap(FigureKind.init(rawValue:))
-        let bond = kinds.count == 2
-            ? RelationshipPromotion(firstFigure: kinds[0], secondFigure: kinds[1], points: rel.delta,
-                                    reason: rel.reason, before: rel.before)
-            : nil
+        // Only Figures that took part together bond; Domain B sends nil for a
+        // lone Figure, and anything naming an absent Figure is ignored.
+        let fed = Set(feeds.map(\.figure))
+        let bond = response.resolution.promotedRelationship.flatMap { rel -> RelationshipPromotion? in
+            let kinds = rel.figures.compactMap(FigureKind.init(rawValue:))
+            guard kinds.count == 2, kinds[0] != kinds[1], kinds.allSatisfy(fed.contains) else { return nil }
+            return RelationshipPromotion(firstFigure: kinds[0], secondFigure: kinds[1], points: rel.delta,
+                                         reason: rel.reason, before: rel.before)
+        }
 
         return EventAnalysis(
             summary: response.interpretation.summary,

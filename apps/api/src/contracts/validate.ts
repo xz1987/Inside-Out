@@ -88,8 +88,10 @@ function snapshotRules(value: EcosystemSnapshotV1): string[] {
 function resolutionRules(value: EcosystemResolutionV1): string[] {
   const errors: string[] = [];
   const { promotedRelationship: rel, evolution, raid } = value;
-  if (rel.figures[0] === rel.figures[1]) errors.push('/promotedRelationship figures must differ');
-  if (rel.after !== rel.before + rel.delta) errors.push('/promotedRelationship after must equal before + delta');
+  if (rel) {
+    if (rel.figures[0] === rel.figures[1]) errors.push('/promotedRelationship figures must differ');
+    if (rel.after !== rel.before + rel.delta) errors.push('/promotedRelationship after must equal before + delta');
+  }
   if (evolution.afterExp !== evolution.beforeExp + evolution.feedApplied) errors.push('/evolution afterExp must equal beforeExp + feedApplied');
   if (raid.attackerFigureId === raid.victimFigureId) errors.push('/raid attacker and victim must differ');
   if (raid.attackerFigureId !== evolution.figureId) errors.push('/raid attacker must be the evolved Figure');

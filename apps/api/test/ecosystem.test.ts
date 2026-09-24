@@ -57,9 +57,9 @@ describe('scenario rules', () => {
     expect(target.ownerFigureId).not.toBe('joy');
   });
 
-  it('pairs a lone Figure with its strongest existing bond', () => {
+  it('promotes no bond when only one Figure took part', () => {
     const { promotedRelationship, raid } = resolveScenario(soloJoy(), snapshot());
-    expect(promotedRelationship).toMatchObject({ figures: ['joy', 'sadness'], before: 9, delta: 4, after: 13, reason: 'Existing memory connection.' });
+    expect(promotedRelationship).toBeNull();
     expect(raid.attackerFigureId).toBe('joy');
     expect(raid.victimFigureId).not.toBe('joy');
   });
@@ -91,9 +91,27 @@ describe('EcosystemDirector', () => {
 
     expect(fallback).toBe(false);
     expect(resolution.explanation).toEqual(narration().explanation);
-    expect(resolution.promotedRelationship.reason).toBe(narration().relationshipReason);
+    expect(resolution.promotedRelationship?.reason).toBe(narration().relationshipReason);
     expect({ ...resolution, explanation: template.explanation, promotedRelationship: template.promotedRelationship })
       .toEqual(template);
+  });
+
+  it('accepts a null reason for a lone Figure and never invents a bond', async () => {
+    const reply = { ...narration(), relationshipReason: 'Joy and Sadness are old friends.' };
+    const { resolution, fallback } = await new EcosystemDirector(new FakeLlm([reply])).resolve(soloJoy(), snapshot());
+    expect(fallback).toBe(false);
+    expect(resolution.promotedRelationship).toBeNull();
+
+    const nullReply = { ...narration(), relationshipReason: null };
+    const second = await new EcosystemDirector(new FakeLlm([nullReply])).resolve(soloJoy(), snapshot());
+    expect(second.fallback).toBe(false);
+    expect(second.resolution.promotedRelationship).toBeNull();
+  });
+
+  it('falls back when the model drops the reason for a real bond', async () => {
+    const reply = { ...narration(), relationshipReason: null };
+    const { fallback } = await new EcosystemDirector(new FakeLlm([reply])).resolve(interpretation(), snapshot());
+    expect(fallback).toBe(true);
   });
 
   it('sends the summary but never the raw memory text', async () => {

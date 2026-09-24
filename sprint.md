@@ -46,7 +46,7 @@
 - [x] iOS 端接入 `/api/v1/events/interpret`（`APIClient` + `RemoteEventInterpreter`），后端不可达时回退本地关键词并在结果页标注 “Offline guess”
 - [-] ~~确认前修改 interpretation：增减 Figure、调浓度、改 summary（MVP-FR-04 / MVP-UI-08）~~ — **决定不做**：分配完全交给 AI。用户可以自己选会导致不真实的行为，也与“情绪有自己的意志”的核心设定冲突。纠错途径改为“重新讲一遍”（Edit and ask again），用户能改讲法，不能改数值。结果页只展示“谁和谁得到加分”。
 - [x] Most fed 视觉（C 位 + 更大 + 更亮）、EXP bar 当前值 → 本次增量动画
-- [x] Relationship before/after：结果页显示 “Anger & Fear grew closer 12 → 19”，delta 由 Domain B 计算；保存时更新关系分数；单个 Figure 也显示与其最亲近 Figure 的关系（不画连线）；离线时由本地分数 +8 计算
+- [x] Relationship before/after：结果页显示 “Anger & Fear grew closer 12 → 19”，delta 由 Domain B 计算；保存时更新关系分数；**只有一个 Figure 时不产生、不显示关系**；离线时由本地分数 +8 计算
 - [x] 查看原文 + Edit input：摘要卡片右上角 “原话” 图标 / 点卡片 → “What you said” 面板 → “Edit and ask again” 回到首页并预填打字弹层（语音输入也走文字编辑）
 
 ## Sprint 3 — Mock Narrative（PRD §32–35）
@@ -154,3 +154,11 @@
 - 产品决策：输入不设最少字数（PRD §30 原为 ≥15 字符），“tired” 这样的一个词也是有效的情绪瞬间。iOS 只拦截空白输入；后端改为 1–4000 字符，4000 仅防止误粘贴超长文本拖垮额度与响应时间。
 - 验证：输入 “tired” → Sadness +6，摘要 “You felt tired.”，关系 “Sadness & Joy 9 → 13”。后端测试 71 个通过（新增单个词可通过的用例）。
 - 排查粘贴问题：app 内长按 → Paste 正常；问题出在 Mac 剪贴板未同步到模拟器（Claude 内嵌模拟器面板不转发 ⌘V）。可用 `pbpaste | xcrun simctl pbcopy booted` 后长按粘贴，或在 Simulator.app 窗口中 ⌘V。
+
+### 2026-09-24（修正：关系只在共同参与的 Figure 之间产生）
+- 问题：输入 “tired” 只喂了 Sadness，结果页却显示 “Sadness & Joy grew closer 9 → 13”，保存后 Joy–Sadness 真的 +4。原因是按 PRD §31 C 实现了“单个 Figure 时沿用已有关系”的规则。
+- 产品决策：PRD 该条款有误。关系只在本次事件中共同出现的 Figure 之间产生；单个 Figure 不产生关系。已修订 PRD §31 C、MVP-UI-07、MVP-FR-03，并保留修订说明。
+- Contract：`ecosystem-resolution.v1.promotedRelationship` 允许为 `null`（仍是 v1：尚未发布）。
+- 后端：`choosePromotedPair` 单 Figure 返回 null；Domain B prompt 升级为 `ecosystem-mvp-v2`（无关系时 relationshipReason 为 null，不允许编造关系），模型无法凭空生成关系。测试 74 个通过。
+- iOS：`ResolutionDTO.promotedRelationship` 可选，且只接受两个 Figure 都在本次被喂名单中的关系。
+- 验证（真实网关）：“tired” → 仅 Sadness +4，无关系；房租上涨 → Anger & Fear 12 → 20。

@@ -14,6 +14,8 @@ Rules:
   so the schemas can be sent to the LLM as strict structured-output schemas.
 - Rules JSON Schema can't express (concentrations sum to 1, attacker ≠ victim,
   arithmetic) live in `apps/api/src/contracts/validate.ts`.
+- `promotedRelationship` is null when only one Figure took part: bonds only grow
+  between Figures that were in the same event together.
 - `exp` and `energy` are integers 0–100 on the wire. The iOS app currently stores
   energy as 0–1 and converts at the boundary.
 - A schema change needs its own PR, updated fixtures, and a bumped version for

@@ -171,7 +171,9 @@ struct ResolutionDTO: Decodable {
         let reason: String
     }
 
-    let promotedRelationship: PromotedRelationship
+    /// nil when only one Figure took part — bonds only grow between Figures
+    /// that were in the same event together.
+    let promotedRelationship: PromotedRelationship?
 }
 
 private struct ErrorEnvelopeDTO: Decodable {
