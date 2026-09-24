@@ -47,7 +47,7 @@
 - [ ] 确认前修改 interpretation：增减 Figure、调浓度、改 summary（MVP-FR-04）
 - [x] Most fed 视觉（C 位 + 更大 + 更亮）、EXP bar 当前值 → 本次增量动画
 - [~] Relationship before/after 数值：后端 Domain B 已返回 before/delta/after；iOS 仍只显示 +8 bond，待接 `/sessions/run`
-- [ ] 可展开查看原始 transcript、`Edit input` 返回 Screen 1
+- [x] 查看原文 + Edit input：摘要卡片右上角 “原话” 图标 / 点卡片 → “What you said” 面板 → “Edit and ask again” 回到首页并预填打字弹层（语音输入也走文字编辑）
 
 ## Sprint 3 — Mock Narrative（PRD §32–35）
 
@@ -125,3 +125,8 @@
 - 真实网关端到端（3 个样例，均无 fallback）：初版 11–12 s（A 5–6 s + B 5–6 s）。B 改用 `reasoning_effort: minimal` 后约 2 s，总计 5–10 s，文案质量不变 → B 默认 `minimal`、A 保持 `low`。
 - 修正：单 Figure 时 LLM 会编造另一个 Figure 也参与了事件；prompt 增加 `bothInEvent` 标记后改为“通过已有的共同记忆变得更亲近”。
 - 测试 70 个全部通过（新增 25 个：规则、Director 回退、两个路由、Orchestrator 不在 A 失败时调用 B）。
+
+### 2026-09-24（Sprint 2 收尾①：查看原文 + Edit input，分支 `feat/result-details`）
+- `ResultOverlay`：摘要卡片加 `text.quote` 按钮，卡片可点；新增 `OriginalInputSheet`（显示完整原话、来源与时长、可选中复制、“Edit and ask again”）。
+- `JournalViewModel`：`lastInputText` 记录实际发送的文本；`editLastInput()` 回到首页，等结果页面板收起后（450 ms）打开预填好的打字弹层。
+- 模拟器验证：语音示例 → 结果 → 查看原话 → Edit → 首页打字弹层已预填原文。

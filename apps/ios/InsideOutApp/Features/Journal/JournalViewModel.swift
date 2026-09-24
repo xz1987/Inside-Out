@@ -44,6 +44,8 @@ final class JournalViewModel: ObservableObject {
     @Published private(set) var isInterpreting = false
     /// Shown on the Listening screen; the transcript is kept so Done retries.
     @Published private(set) var interpretError: String?
+    /// Exactly what was sent for the current result (transcript or typed text).
+    @Published private(set) var lastInputText = ""
 
     private let interpreter: EventInterpreting
     /// Only used for the live Figure reactions while listening.
@@ -167,6 +169,7 @@ final class JournalViewModel: ObservableObject {
             let result = try await interpreter.interpret(eventText: text, source: mode == .voice ? .voice : .message)
             guard navigation == started else { return }
             analysis = result
+            lastInputText = text
             inputMode = mode
             capturedAt = Date()
             baseline = figures
@@ -208,6 +211,20 @@ final class JournalViewModel: ObservableObject {
             guard !Task.isCancelled, let self else { return }
             self.selectedFigure = primary
             self.go(.figures)
+        }
+    }
+
+    /// "Edit input" (PRD §31 A): back to the start with the original text
+    /// pre-filled in the type sheet, voice or not.
+    func editLastInput() {
+        let text = lastInputText
+        go(.home)
+        pendingTask = Task { [weak self] in
+            // Let the result screen's sheet finish dismissing first.
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !Task.isCancelled, let self else { return }
+            self.typedText = text
+            self.openTyping()
         }
     }
 

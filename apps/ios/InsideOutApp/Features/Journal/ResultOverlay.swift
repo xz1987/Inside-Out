@@ -8,6 +8,7 @@ struct ResultOverlay: View {
 
     @State private var expFilled = false
     @State private var replaying = false
+    @State private var showingOriginal = false
 
     private var primary: FigureFeed { analysis.feeds[0] }
     private var secondary: FigureFeed? { analysis.feeds.count > 1 ? analysis.feeds[1] : nil }
@@ -108,6 +109,15 @@ struct ResultOverlay: View {
                 if vm.inputMode == .voice {
                     replayChip
                 }
+                Button { showingOriginal = true } label: {
+                    Image(systemName: "text.quote")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Ink.primary)
+                        .frame(width: 28, height: 28)
+                        .background(Circle().fill(Ink.primary.opacity(0.07)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("See what you said")
             }
             Text(analysis.summary)
                 .font(.rounded(16, .bold))
@@ -126,6 +136,18 @@ struct ResultOverlay: View {
         .padding(.horizontal, 18)
         .frame(width: 350, alignment: .leading)
         .glassCard()
+        .contentShape(Rectangle())
+        .onTapGesture { showingOriginal = true }
+        .sheet(isPresented: $showingOriginal) {
+            OriginalInputSheet(
+                text: vm.lastInputText,
+                source: vm.inputMode == .voice ? "You said · 0:" + String(format: "%02d", vm.recordedSeconds) : "You wrote",
+                onEdit: {
+                    showingOriginal = false
+                    vm.editLastInput()
+                }
+            )
+        }
     }
 
     /// No audio is recorded yet (Sprint 1), so this only toggles its label.
@@ -301,5 +323,54 @@ private struct Sparkles: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+}
+
+/// "What you said" — the untouched input behind the summary, with a way back
+/// to edit and resend it (PRD §31 A).
+private struct OriginalInputSheet: View {
+    let text: String
+    let source: String
+    let onEdit: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(source.uppercased())
+                .font(.rounded(12, .heavy))
+                .tracking(1)
+                .foregroundStyle(Ink.label)
+            ScrollView {
+                Text(text)
+                    .font(.rounded(17, .semibold))
+                    .lineSpacing(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            }
+            .frame(maxHeight: 220)
+
+            Button(action: onEdit) {
+                Label("Edit and ask again", systemImage: "pencil")
+                    .font(.rounded(16, .heavy))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 54)
+                    .background(Capsule().fill(Ink.primary))
+            }
+            .buttonStyle(PressableStyle())
+
+            Button("Close") { dismiss() }
+                .font(.rounded(14, .bold))
+                .foregroundStyle(Ink.muted)
+                .frame(maxWidth: .infinity)
+        }
+        .foregroundStyle(Ink.primary)
+        .padding(.horizontal, 24)
+        .padding(.top, 28)
+        .padding(.bottom, 12)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        .presentationCornerRadius(34)
+        .presentationBackground(.white.opacity(0.94))
     }
 }
