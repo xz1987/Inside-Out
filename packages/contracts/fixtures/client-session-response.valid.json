@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "client-session-response.v1",
+  "sessionId": "session_fixture_001",
+  "traceId": "trace_fixture_001",
+  "interpretation": {
+    "schemaVersion": "event-interpretation.v1",
+    "eventId": "event_fixture_001",
+    "summary": "A driver cut you off on the way home, and it’s still rattling around.",
+    "turningPoint": "The driver yelled as if it were your fault.",
+    "sourceType": "voice",
+    "figures": [
+      {
+        "id": "anger",
+        "concentration": 0.66,
+        "feed": 18,
+        "evidence": "You were cut off and then blamed for it.",
+        "voiceLine": "Someone cut you off. That wasn’t fair.",
+        "confidence": 0.88
+      },
+      {
+        "id": "fear",
+        "concentration": 0.34,
+        "feed": 12,
+        "evidence": "You keep picturing it happening again tomorrow.",
+        "voiceLine": "I’m worried it’ll happen again.",
+        "confidence": 0.74
+      }
+    ],
+    "relationshipCues": [
+      {
+        "figures": [
+          "anger",
+          "fear"
+        ],
+        "reason": "Both showed up in the same moment on the road."
+      }
+    ],
+    "objectCandidate": {
+      "name": "The roundabout sign",
+      "source": "literal"
+    },
+    "uncertainties": []
+  },
+  "resolution": {
+    "schemaVersion": "ecosystem-resolution.v1",
+    "simulationMode": true,
+    "scenarioId": "mvp_evolve_raid_mask_v1",
+    "promotedRelationship": {
+      "figures": [
+        "anger",
+        "fear"
+      ],
+      "before": 12,
+      "delta": 8,
+      "after": 20,
+      "reason": "Both showed up in the same moment on the road."
+    },
+    "evolution": {
+      "figureId": "anger",
+      "beforeExp": 82,
+      "feedApplied": 18,
+      "threshold": 100,
+      "afterExp": 100,
+      "mocked": true
+    },
+    "raid": {
+      "attackerFigureId": "anger",
+      "victimFigureId": "joy",
+      "targetMemoryId": "memory_seed_joy_01",
+      "targetObjectId": "object_seed_joy_01",
+      "result": "success",
+      "mocked": true
+    },
+    "aftermath": {
+      "victimFinalLevel": 1,
+      "memoryFinalState": "masked"
+    },
+    "explanation": [
+      "Anger evolved after receiving Feed.",
+      "It took a Memory from Joy.",
+      "Joy fell to Level 1, so the related Memory became Masked."
+    ]
+  },
+  "fallback": {
+    "interpretation": false,
+    "resolution": false
+  }
+}

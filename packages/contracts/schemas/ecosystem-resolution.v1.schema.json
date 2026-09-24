@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inside-out.local/schemas/ecosystem-resolution.v1.schema.json",
+  "title": "EcosystemResolutionV1",
+  "description": "Domain B output for the MVP staged scenario (PRD §32–34). Mock outcomes are fixed by const.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "simulationMode", "scenarioId", "promotedRelationship", "evolution", "raid", "aftermath", "explanation"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "ecosystem-resolution.v1" },
+    "simulationMode": { "type": "boolean", "const": true },
+    "scenarioId": { "type": "string", "const": "mvp_evolve_raid_mask_v1" },
+    "promotedRelationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["figures", "before", "delta", "after", "reason"],
+      "properties": {
+        "figures": { "type": "array", "items": { "$ref": "#/$defs/figureId" }, "minItems": 2, "maxItems": 2 },
+        "before": { "type": "integer" },
+        "delta": { "type": "integer", "minimum": 0 },
+        "after": { "type": "integer" },
+        "reason": { "type": "string", "maxLength": 200 }
+      }
+    },
+    "evolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["figureId", "beforeExp", "feedApplied", "threshold", "afterExp", "mocked"],
+      "properties": {
+        "figureId": { "$ref": "#/$defs/figureId" },
+        "beforeExp": { "type": "integer", "minimum": 0 },
+        "feedApplied": { "type": "integer", "minimum": 0 },
+        "threshold": { "type": "integer", "const": 100 },
+        "afterExp": { "type": "integer", "minimum": 100 },
+        "mocked": { "type": "boolean", "const": true }
+      }
+    },
+    "raid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attackerFigureId", "victimFigureId", "targetMemoryId", "targetObjectId", "result", "mocked"],
+      "properties": {
+        "attackerFigureId": { "$ref": "#/$defs/figureId" },
+        "victimFigureId": { "$ref": "#/$defs/figureId" },
+        "targetMemoryId": { "type": "string", "minLength": 1 },
+        "targetObjectId": { "type": ["string", "null"] },
+        "result": { "type": "string", "const": "success" },
+        "mocked": { "type": "boolean", "const": true }
+      }
+    },
+    "aftermath": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["victimFinalLevel", "memoryFinalState"],
+      "properties": {
+        "victimFinalLevel": { "type": "integer", "const": 1 },
+        "memoryFinalState": { "type": "string", "const": "masked" }
+      }
+    },
+    "explanation": {
+      "type": "array",
+      "description": "Three-step causal chain shown on Screen 5 (PRD §34 D).",
+      "items": { "type": "string", "maxLength": 160 },
+      "minItems": 3,
+      "maxItems": 3
+    }
+  },
+  "$defs": {
+    "figureId": { "type": "string", "enum": ["joy", "sadness", "anger", "fear"] }
+  }
+}

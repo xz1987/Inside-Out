@@ -23,7 +23,7 @@
 
 - [x] Message 输入：「or type it instead」底部弹层 + 15 字符下限校验
 - [ ] 语音录制（AVFoundation）：录音按钮、时长、暂停/继续/结束、删除重录、录音中 active state
-- [ ] 语音转文字（先用 Speech framework，后续可迁到后端）
+- [ ] 语音转文字：已决定放在手机端（Apple Speech framework），后端只收文字、不做音频上传
 - [ ] 语音 ≥ 5 秒有效输入校验
 - [x] 语音为主入口、文字为次入口（UI 层面）
 - [~] Listening 屏：转写逐行展示 + Figure 按关键词实时变大已完成，但转写内容目前是写死的示例句（等真实录音接入后替换）
@@ -35,7 +35,10 @@
 
 - [x] 本地 fallback 解析器 `LocalEventInterpreter`（关键词匹配）
 - [x] 结果页基础：event summary、Figure Feed、浓度、证据解释、promoted relationship
-- [ ] 后端 API / Orchestrator（`apps/api/`，`POST /api/v1/events/interpret` 等）
+- [x] 后端脚手架：`apps/api`（Node 20 + TypeScript + Express 5），Cornell 网关兼容的 LLM client，`/health`，trace id，JSON 错误
+- [x] Contracts v1：`packages/contracts` 4 个 JSON Schema + fixtures，Ajv 校验 + PRD §41.5 规则，26 个测试
+- [ ] 确认 Cornell 网关是否支持 strict JSON Schema 输出（填 key 后跑 `npm run smoke:llm`）
+- [ ] Orchestrator `POST /api/v1/sessions/run`（A → 校验 → B → 校验 → 合并；§42.3 失败回退）
 - [ ] Domain A — Input & Memory Interpreter（接 LLM，输出 §41 JSON contract）
 - [ ] Domain B — Ecosystem Director（关系促进与后续互动）
 - [ ] iOS 端接入后端，本地解析器保留为 fallback
@@ -89,3 +92,10 @@
 - 删除旧的 `Features/DailyEvent/`。
 - 与设计稿的有意偏差：麦克风文案 “Hold to tell me” → “Tap to tell me”（实际交互是点按）；结果页 Replay 移到时间行，避免摘要卡片压住 +N；结果页主次 Figure、颜色、连线渐变按真实解析结果动态决定，而非写死 Anger/Fear。
 - 模拟器验证：语音(示例)→结果→保存→Figures→Memories、打字→结果（Joy+Fear）两条路径均通过。
+
+### 2026-09-24（后端第 1 步：脚手架 + contracts，分支 `chore/contracts-v1`）
+- 参考课程示例 `DEA6400-main/node-js/simple-app`：Cornell 网关 `https://api.ai.it.cornell.edu` + `/v1`，模型名加 `openai.` 前缀，`developer` role，单个 `OPENAI_API_KEY`。
+- 新增 `apps/api`：`config.ts`（每个 domain 独立 key/model/prompt 版本，缺省回退到 `OPENAI_API_KEY`）、`llm/llmClient.ts`（优先 strict `json_schema`，网关不支持时回退 `json_object`）、`contracts/validate.ts`、`app.ts`（`/health`、trace id、JSON 404/400/500）、`scripts/smoke-llm.ts`。
+- 新增 `packages/contracts`：`event-interpretation.v1`（新增 `voiceLine`）、`ecosystem-snapshot.v1`（seed memory 加 title/objectName）、`ecosystem-resolution.v1`（新增三步 `explanation`）、`client-session-response.v1`（带 `fallback` 标记）+ 对应 fixtures。
+- 决定：语音转文字在手机端，后端不做音频上传。
+- 验证：typecheck、26 个 vitest、build、本地启动 `/health` 均通过。尚未用真实 key 调网关。

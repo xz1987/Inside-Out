@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "event-interpretation.v1",
+  "eventId": "event_fixture_001",
+  "summary": "A driver cut you off on the way home, and it’s still rattling around.",
+  "turningPoint": "The driver yelled as if it were your fault.",
+  "sourceType": "voice",
+  "figures": [
+    {
+      "id": "anger",
+      "concentration": 0.66,
+      "feed": 18,
+      "evidence": "You were cut off and then blamed for it.",
+      "voiceLine": "Someone cut you off. That wasn’t fair.",
+      "confidence": 0.88
+    },
+    {
+      "id": "fear",
+      "concentration": 0.34,
+      "feed": 12,
+      "evidence": "You keep picturing it happening again tomorrow.",
+      "voiceLine": "I’m worried it’ll happen again.",
+      "confidence": 0.74
+    }
+  ],
+  "relationshipCues": [
+    { "figures": ["anger", "fear"], "reason": "Both showed up in the same moment on the road." }
+  ],
+  "objectCandidate": { "name": "The roundabout sign", "source": "literal" },
+  "uncertainties": []
+}
