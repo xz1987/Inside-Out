@@ -3,6 +3,8 @@ import express, { type ErrorRequestHandler, type RequestHandler } from 'express'
 import type { AppConfig } from './config.js';
 import { LlmClient } from './llm/llmClient.js';
 import { ContractError } from './contracts/validate.js';
+import { InputInterpreter } from './domains/input/inputInterpreter.js';
+import { eventsRouter } from './routes/events.js';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -17,13 +19,16 @@ export interface AppDeps {
   config: AppConfig;
   inputLlm: LlmClient;
   ecosystemLlm: LlmClient;
+  inputInterpreter: InputInterpreter;
 }
 
 export function createDeps(config: AppConfig): AppDeps {
+  const inputLlm = new LlmClient(config.llm.input);
   return {
     config,
-    inputLlm: new LlmClient(config.llm.input),
+    inputLlm,
     ecosystemLlm: new LlmClient(config.llm.ecosystem),
+    inputInterpreter: new InputInterpreter(inputLlm, config.llm.input.promptVersion),
   };
 }
 
@@ -66,8 +71,8 @@ export function createApp(deps: AppDeps) {
     });
   });
 
-  // Domain routes land here in the next PRs:
-  //   POST /api/v1/events/interpret   (Domain A)
+  app.use(eventsRouter(deps.inputInterpreter));
+  // Still to come:
   //   POST /api/v1/ecosystem/resolve  (Domain B)
   //   POST /api/v1/sessions/run       (orchestrator)
 

@@ -12,7 +12,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "smoke:llm": "tsx scripts/smoke-llm.ts"
+    "smoke:llm": "tsx scripts/smoke-llm.ts",
+    "try:input": "tsx scripts/try-input.ts"
   },
   "dependencies": {
     "ajv": "^8.20.0",

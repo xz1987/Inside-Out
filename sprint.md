@@ -29,7 +29,7 @@
 - [~] Listening 屏：转写逐行展示 + Figure 按关键词实时变大已完成，但转写内容目前是写死的示例句（等真实录音接入后替换）
 - [ ] 错误状态：麦克风权限拒绝（回退文字 + 系统设置入口）、转录失败、分析失败保留 input、断网 retry
 - [ ] 可选 prompt chips
-- [ ] Loading 状态（新 UI 暂无；本地解析是瞬时的，接后端时需补）
+- [ ] Loading 状态（新 UI 暂无）。**接后端后必须补**：Domain A 实测 3–7 秒
 
 ## Sprint 2 — Functional Interpretation（PRD §31、§37–41）
 
@@ -39,7 +39,8 @@
 - [x] Contracts v1：`packages/contracts` 4 个 JSON Schema + fixtures，Ajv 校验 + PRD §41.5 规则，26 个测试
 - [x] 确认 Cornell 网关支持 strict JSON Schema 输出（`npm run smoke:llm`：`openai.gpt-5-mini`，`json_schema` 模式，约 2.5 s）
 - [ ] Orchestrator `POST /api/v1/sessions/run`（A → 校验 → B → 校验 → 合并；§42.3 失败回退）
-- [ ] Domain A — Input & Memory Interpreter（接 LLM，输出 §41 JSON contract）
+- [x] Domain A — `POST /api/v1/events/interpret`：prompt `input-v1`、strict JSON Schema 输出、服务端校验 + 1 次纠错重试、无 key 时关键词回退、503/502 错误语义
+- [ ] Domain A prompt 调优：summary 偶尔超过 30 词；uncertainties 偏多（目前 UI 不展示，影响不大）
 - [ ] Domain B — Ecosystem Director（关系促进与后续互动）
 - [ ] iOS 端接入后端，本地解析器保留为 fallback
 - [ ] 确认前修改 interpretation：增减 Figure、调浓度、改 summary（MVP-FR-04）
@@ -100,3 +101,10 @@
 - 决定：语音转文字在手机端，后端不做音频上传。
 - 验证：typecheck、26 个 vitest、build、本地启动 `/health` 均通过。尚未用真实 key 调网关。
 - 用真实 key 跑 `npm run smoke:llm`：Cornell 网关 + `openai.gpt-5-mini` 返回正确，strict `json_schema` 可用，约 2.5 s。
+
+### 2026-09-24（后端第 2 步：Domain A，分支 `feat/input-domain-v1`）
+- 新增 `src/domains/input/`：`inputInterpreter.ts`（组装 server 字段、按 feed 排序、浓度归一化、过滤无效 relationship cue、Ajv 校验、失败带错误信息重试 1 次）、`keywordInterpreter.ts`（iOS 关键词解析的 TS 移植，无 key 时兜底）、`prompts/input-v1.ts`。
+- 新增 `src/routes/events.ts`：请求校验（inputType、text 15–4000 字、importance 0–1），日志只记结构不记原文。
+- `reasoning_effort` 实测（gpt-5-mini / Cornell）：默认 9–16 s；`low` 3.4–7.5 s 质量基本不变；`minimal` 2.5–3.8 s 但会凑数加 Figure。默认设为 `low`，可用 `*_REASONING_EFFORT` 覆盖，`off` 省略参数。
+- 真实样例（`npm run try:input`）：英文别车、中文组会被否定、Mia 送咖啡、买牛奶（只给 1 个 Figure）、prompt 注入（未被带偏）、中文交论文后空落 — 结果均合理，中文输入全程中文输出。
+- 测试 45 个全部通过（FakeLlm，不耗额度）；本地 HTTP 端到端调用通过。

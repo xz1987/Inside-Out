@@ -11,7 +11,12 @@ export interface LlmDomainConfig {
   /** Model id as sent to the gateway (prefixed with "openai." off openai.com). */
   model: string;
   promptVersion: string;
+  /** Sent as reasoning_effort; undefined omits it (use "off" for non-reasoning models). */
+  reasoningEffort: ReasoningEffort | undefined;
 }
+
+export type ReasoningEffort = 'minimal' | 'low' | 'medium' | 'high';
+const REASONING_EFFORTS: readonly string[] = ['minimal', 'low', 'medium', 'high'];
 
 export interface AppConfig {
   port: number;
@@ -35,6 +40,18 @@ export function gatewayModel(model: string, baseURL: string): string {
   return `openai.${model}`;
 }
 
+/**
+ * Defaults to "low": on gpt-5-mini via the Cornell gateway it cut latency from
+ * ~9–16 s to ~3–7 s with no visible quality loss ("minimal" started padding
+ * Figures). "off" omits the parameter for models that don't support it.
+ */
+function parseEffort(value: string | undefined): ReasoningEffort | undefined {
+  if (value === undefined) return 'low';
+  if (value === 'off') return undefined;
+  if (!REASONING_EFFORTS.includes(value)) throw new Error(`Invalid reasoning effort: ${value}`);
+  return value as ReasoningEffort;
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const baseURL = normalizeBaseURL(env.LLM_HOST || env.LLM_BASE_URL);
   const blank = (value: string | undefined) => (value && value.trim() ? value.trim() : undefined);
@@ -44,6 +61,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     baseURL,
     model: gatewayModel(blank(env[`${prefix}_DOMAIN_MODEL`]) ?? 'gpt-5-mini', baseURL),
     promptVersion: blank(env[`${prefix}_PROMPT_VERSION`]) ?? defaultPrompt,
+    reasoningEffort: parseEffort(blank(env[`${prefix}_REASONING_EFFORT`])),
   });
 
   return {

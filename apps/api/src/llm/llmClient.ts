@@ -24,11 +24,24 @@ export class LlmNotConfiguredError extends Error {
   }
 }
 
+/** The slice of LlmClient the domains depend on, so tests can inject a fake. */
+export interface JsonLlm {
+  readonly configured: boolean;
+  completeJson<T>(request: CompleteJsonRequest): Promise<JsonCompletion<T>>;
+}
+
+/** Network failures, timeouts, rate limits and 5xx — worth a retry later. */
+export function isTransientLlmError(error: unknown): boolean {
+  if (error instanceof OpenAI.APIConnectionError) return true; // includes timeouts
+  if (error instanceof OpenAI.APIError) return error.status === 429 || (error.status ?? 0) >= 500;
+  return false;
+}
+
 /**
  * One client per AI domain, so each can use its own key, model and prompt
  * version (PRD §37.3). Works against api.openai.com and the Cornell gateway.
  */
-export class LlmClient {
+export class LlmClient implements JsonLlm {
   private readonly openai: OpenAI | undefined;
 
   constructor(readonly config: LlmDomainConfig, openai?: OpenAI) {
@@ -52,6 +65,7 @@ export class LlmClient {
     try {
       const response = await this.openai.chat.completions.create({
         model: this.config.model,
+        ...this.reasoning(),
         messages: [
           { role: 'developer', content: request.system },
           { role: 'user', content: request.user },
@@ -68,6 +82,7 @@ export class LlmClient {
 
     const response = await this.openai.chat.completions.create({
       model: this.config.model,
+      ...this.reasoning(),
       messages: [
         {
           role: 'developer',
@@ -78,6 +93,10 @@ export class LlmClient {
       response_format: { type: 'json_object' },
     });
     return { data: parseJson<T>(response.choices[0]?.message?.content), mode: 'json_object', model: this.config.model };
+  }
+
+  private reasoning() {
+    return this.config.reasoningEffort ? { reasoning_effort: this.config.reasoningEffort } : {};
   }
 }
 
