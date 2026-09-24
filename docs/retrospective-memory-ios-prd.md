@@ -8,6 +8,20 @@
 
 > **Current MVP scope notice：** 当前可实现原型的权威范围见 **Section 28–36**。Section 5–17 描述完整产品未来可能使用的系统逻辑；Section 18–26 保留为 post-MVP 参考，不属于本轮开发范围。当前 MVP 只真实实现 daily-event input 与 interpretation，变形、掠夺、降级和 memory mask 均为预设 mock narrative。
 
+> **修订记录（2026-09-24，实现过程中的产品 / 技术决策）** — 各条款旁均有“修订”说明，原文保留：
+>
+> | 位置 | 修订内容 |
+> |---|---|
+> | §29 信息架构 | 增加 Home / Figures / Memories 底部 tab；主流程仍为线性 |
+> | §30 页面内容 | 语音优先首页（大麦克风），文字为次要入口；不使用 segmented control |
+> | §30 Input Rules | 文字输入取消 15 字最低限制，只拒绝空白 |
+> | §31 C、`MVP-UI-07`、`MVP-FR-03` | 关系只在本次共同出现的 Figure 之间产生，两两各一段；单个 Figure 不产生关系 |
+> | §31 D、`MVP-UI-08`、`MVP-FR-04` | 取消手动调整解读；纠错方式为重新讲述（Edit and ask again） |
+> | §38.2 / §38.3 | 使用 Cornell 网关；`LLM_HOST`、共用 `OPENAI_API_KEY`、reasoning effort |
+> | §39.1、§40.2、§42.1 | 语音转文字在手机端；不实现音频上传；iOS 调用 `/sessions/run` |
+> | §40.2 | 请求 / 响应字段改为 camelCase，列出实际格式与错误码 |
+> | §41 | Contract 以 `packages/contracts/schemas/` 为准；新增 `voiceLine`、`explanation`、`promotedRelationships` 等 |
+
 ---
 
 ## 1. Product Summary
@@ -1345,6 +1359,9 @@ scenario_id: "mvp_evolve_raid_mask_v1"
 
 当前 MVP 使用线性 `NavigationStack`，不需要完整 TabView、Memory Library、Figure Library 或 Settings。
 
+> **修订（2026-09-24）— 信息架构**：按 Claude Design 设计稿，App 增加底部 tab：Home（Screen 1 输入）、Figures（Figure 等级 / 能量 / 关系一览）、Memories（已保存的记忆列表）。主流程 Screen 1 → Screen 2（→ Screen 3–5）仍然是线性的，tab 只在 Home / Figures / Memories 页显示，结果页和后续 mock 叙事页不显示 tab。
+
+
 ### 最小页面结构
 
 ```text
@@ -1404,9 +1421,15 @@ Screen 5 内包含一个可展开的 `Masked Memory Detail` 状态，不单独�
 - 主按钮：`Let the figures listen`；
 - 次按钮：`Clear`。
 
+> **修订（2026-09-24）— 语音优先的输入页**：按设计稿，Screen 1 不再使用 Voice / Message segmented control。首页中央是大号麦克风按钮（“Tap to tell me”），四个 Figure 围绕它；文字输入是次要入口（“or type it instead” → 底部弹层，按钮 “Share with my Figures”）。标题改为 “What stayed with you today?”。录音中的 Listening 页实时显示转写，并让相关 Figure 放大靠近。prompt chips 暂未实现。
+
+
 ### Input Rules
 
 - 至少需要 5 秒有效语音或 15 个字符；
+
+> **修订（2026-09-24）— 取消文字最少字数**：文字输入不设最少字数，只拒绝空白输入（“tired” 这样一个词也是有效的情绪瞬间）。后端仅保留 4000 字符上限，用于防止误粘贴超长文本。语音 ≥5 秒的规则暂不变，待真实录音接入后再评估。
+
 - 空输入时主按钮 disabled；
 - Voice 和 Message 可以二选一，当前 MVP 不要求混合输入；
 - 用户提交后显示分析 loading state；
@@ -1476,7 +1499,9 @@ They both participated in the same memory.
 - 两只 Figure；
 - Relationship before / after；
 - 被促进的原因；
-- 如果只有一个 Figure 得到 Feed，使用该 Figure 与 mock memory 中已有 co-owner 的关系作为 demo pair，并明确显示 `Existing memory connection`。
+- 关系只在**本次事件中共同出现的 Figure** 之间产生，**两两之间各促进一段**：1 个 Figure → 0 段（不显示关系区块），2 个 → 1 段，3 个 → 3 段。
+
+> **修订（2026-09-24）**：原条款为“只促进一段关系；只有一个 Figure 得到 Feed 时，使用该 Figure 与 mock memory 中已有 co-owner 的关系作为 demo pair，并显示 `Existing memory connection`”。这会让没有参与这件事的 Figure 获得关系加分，而同一事件中的第三个 Figure 却得不到关系，与“关系来自共同经历”的设定不符，已改为上述规则。
 
 #### D. Confirmation
 
@@ -1487,6 +1512,9 @@ They both participated in the same memory.
   - 调整浓度；
   - 修改 event summary；
 - 用户确认后，系统选择 Feed 最高的 Figure 作为后续 mock 中的 `Evolved Figure`。
+
+> **修订（2026-09-24）— 取消手动调整解读**：不实现 `Adjust interpretation`（增减 Figure、调整浓度、修改 summary）。情绪分配完全交给 AI：允许用户自己选择会导致不真实的行为（例如为了喂某个 Figure 而调数值），也与“情绪有自己的意志、自己争夺记忆”的设定冲突。唯一的纠错途径是**重新讲一遍**：结果页可查看原话，并通过 “Edit and ask again” 带着原文回到输入页修改后重新提交——用户能改讲法，不能改数值；这也覆盖语音转写出错的情况。主按钮为 “Save this memory”（即确认并喂给 Figure）。受影响条款：`MVP-UI-08`、`MVP-FR-04`。
+
 
 ### Feed 输出数据
 
@@ -1512,8 +1540,8 @@ analysis_result:
 
 - `MVP-UI-05` 用户能看出哪只 Figure 获得最多 Feed；
 - `MVP-UI-06` 每次 Feed 必须显示基于 input 的简短理由；
-- `MVP-UI-07` 必须显示且只显示一段被促进的 relationship；
-- `MVP-UI-08` 用户可以修改 Figure mix 后再确认；
+- `MVP-UI-07` 显示本次共同参与的 Figure 之间两两被促进的全部 relationship（2 个 Figure → 1 段，3 个 → 3 段），每段含 before → after；只有一个 Figure 时不显示；
+- ~~`MVP-UI-08` 用户可以修改 Figure mix 后再确认；~~（已取消，见 §31 D 修订说明）
 - `MVP-UI-09` 确认后进入固定 transformation mock。
 
 ---
@@ -1803,8 +1831,8 @@ input_ready
 
 - `MVP-FR-01` 用户可以通过 voice 或 message 输入一个 daily event。
 - `MVP-FR-02` 系统返回 event summary、fed figures、Feed amount 和 concentration。
-- `MVP-FR-03` 系统返回且只返回一段 promoted relationship。
-- `MVP-FR-04` 用户可以在确认前修改 interpretation。
+- `MVP-FR-03` 系统为本次获得 Feed 的 Figure 两两返回一段 promoted relationship（`promotedRelationships` 数组：1 个 Figure → 空，2 个 → 1 段，3 个 → 3 段），不涉及未参与的 Figure。
+- ~~`MVP-FR-04` 用户可以在确认前修改 interpretation。~~（已取消：分配完全由 AI 决定，纠错方式为重新讲述，见 §31 D 修订说明）
 - `MVP-FR-05` Feed 最高的 Figure 被选为 Evolved Figure，或明确切换至预设 demo Figure。
 - `MVP-FR-06` EXP threshold 和 transformation 使用固定 mock 数据。
 - `MVP-FR-07` Raid 必须使用固定 fixture，且结果固定成功。
@@ -1999,6 +2027,14 @@ APP_ENV=development
 
 Repository 只提交 `.env.example`，值必须为空或为 placeholder。
 
+> **修订（2026-09-24）— 环境变量与 Cornell 网关**：实际使用 Cornell AI 网关（OpenAI 兼容，参考课程示例 `DEA6400/node-js/simple-app`）。
+> - `LLM_HOST=https://api.ai.it.cornell.edu`（`/v1` 自动补全；旧名 `LLM_BASE_URL` 仍可用）；走 Cornell 时模型 id 自动加 `openai.` 前缀，如 `openai.gpt-5-mini`。
+> - 新增 `OPENAI_API_KEY` 作为两个 domain 的共用 key；`INPUT_DOMAIN_API_KEY` / `ECOSYSTEM_DOMAIN_API_KEY` 可选，填写时优先生效。
+> - 新增 `INPUT_REASONING_EFFORT`（默认 `low`）/ `ECOSYSTEM_REASONING_EFFORT`（默认 `minimal`），实测把延迟从 9–16 s 降到 A 约 3–7 s、B 约 2 s。
+> - `*_PROMPT_VERSION` 默认跟随代码最新版本（当前 `input-v2`、`ecosystem-mvp-v2`），只在需要固定旧版本时设置。
+> 详见 `apps/api/.env.example` 与 `apps/api/README.md`。
+
+
 ### 38.3 Recommended Key Isolation
 
 如果使用同一 AI provider，推荐为两个 domain 创建两个 project-scoped service account/API key，而不是复制同一个 key：
@@ -2008,6 +2044,9 @@ Repository 只提交 `.env.example`，值必须为空或为 placeholder。
 - 两边可分别设置预算、速率限制和用量追踪；
 - 一个 key 泄漏时可以单独 revoke，不影响另一个 domain；
 - GitHub secret 和 runtime hosting secret 分开管理。
+
+> **修订（2026-09-24）**：Cornell 通常每人只发一个 key，因此两个 domain 默认共用 `OPENAI_API_KEY`；拿到独立 key 后可按上文分别配置，代码已支持。
+
 
 ### 38.4 App-to-Backend Authentication
 
@@ -2035,6 +2074,9 @@ Domain A 负责理解“用户刚刚输入了什么”，不负责决定 Figure 
 ### Inputs
 
 - New event voice recording；
+
+> **修订（2026-09-24）— 语音转文字放在手机端**：使用 Apple Speech framework 在 iPhone 上转写，后端只接收文字。Domain A 不做 transcription，不接收原始音频（隐私更好，也省去上传与保留策略）。
+
 - New event message；
 - Existing event replay request；
 - 可选的 previous event metadata；
@@ -2132,6 +2174,13 @@ iOS 不应分别调用两个 AI domain。推荐只暴露一个 backend origin，
 
 用于开发、调试和 Screen 1 → Screen 2。
 
+> **修订（2026-09-24）— 实际请求 / 响应格式**：字段统一为 camelCase，与 JSON Schema 一致。
+> - `POST /api/v1/events/interpret`：请求 `{ inputType: "voice" | "message", text, importance? }`；响应 `{ schemaVersion, interpretation, fallback, promptVersion, traceId }`。无 `audio_upload_id`。
+> - `POST /api/v1/ecosystem/resolve`：请求 `{ interpretation, snapshot, simulationMode?, scenarioId? }`。
+> - `POST /api/v1/sessions/run`（iOS 实际调用）：请求 `{ inputType, text, importance?, snapshot, sessionId? }`；响应 `ClientSessionResponseV1`，含 `fallback: { interpretation, resolution }`。
+> - 错误统一为 `{ error: { code, message, retryable? }, traceId }`：Domain A 超时 503、输出不合规 502，快照无可掠夺记忆 422。
+
+
 ```yaml
 request:
   session_id: "uuid"
@@ -2189,6 +2238,9 @@ iOS request
 - 返回短期 `audio_upload_id`；
 - Domain A 完成 transcription 后按 retention policy 删除原始临时文件。
 
+> **修订（2026-09-24）**：因语音转文字在手机端完成，**不实现** `/api/v1/uploads/audio`。
+
+
 ### 40.3 Internal Service Interfaces
 
 ```ts
@@ -2214,6 +2266,14 @@ interface EcosystemDirector {
 ### 41.1 Contract Rule
 
 Domain A 与 Domain B 之间禁止使用需要二次自然语言解析的自由文本。必须使用 versioned JSON Schema，并在服务端启用 strict structured output；OpenAI API 支持以 JSON Schema 约束结构化输出。[OpenAI Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs)
+
+> **修订（2026-09-24）— Contract 以代码为准**：权威 schema 在 `packages/contracts/schemas/`，下文示例仅供参考。与下文相比的变化：
+> - `EventInterpretationV1.figures[]` 新增 `voiceLine`（Figure 在结果页说的一句话）；
+> - `EcosystemSnapshotV1.seedMemories[]` 新增 `title`、`objectName`；
+> - `EcosystemResolutionV1`：`promotedRelationship` 改为 `promotedRelationships` 数组（见 §31 C 修订），新增 `explanation`（Screen 5 的三步因果解释）；
+> - 新增 `ClientSessionResponseV1`，含 `fallback` 标记。
+> Cornell 网关已确认支持 strict JSON Schema 输出；服务端在返回前仍会用 Ajv 再校验一次，并检查 §41.5 中 schema 无法表达的规则。
+
 
 ### 41.2 `EventInterpretationV1`
 
@@ -2350,6 +2410,9 @@ Domain A 与 Domain B 之间禁止使用需要二次自然语言解析的自由�
 11. iOS holds mock resolution only in demo session state
 12. Screens 2–5 render the returned payload
 ```
+
+> **修订（2026-09-24）— 实际流程**：1. iOS 录音并在本机转写（或接收文字）→ 2. iOS 调用 `POST /api/v1/sessions/run`，发送文字 + 当前 `EcosystemSnapshotV1`（Figure 等级 / EXP / 能量、关系分数、种子记忆）→ 3. 后端生成 trace id，Domain A 解析 → 校验 → Domain B 决定 → 校验 → 合并返回 `ClientSessionResponseV1`。第 2、5 步中的音频上传与服务端转写不再存在。后端不可达时，iOS 用本地关键词解析兜底，并在结果页标注 “Offline guess”。
+
 
 ### 42.2 Replay Flow — Future-compatible
 

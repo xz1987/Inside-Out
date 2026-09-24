@@ -38,12 +38,26 @@ struct RelationshipPromotion: Codable, Equatable {
     let secondFigure: FigureKind
     let points: Int
     let reason: String
+    /// Score before this event; nil if unknown.
+    var before: Int?
+
+    var after: Int? { before.map { $0 + points } }
+    var pair: FigurePair { FigurePair(firstFigure, secondFigure) }
+}
+
+enum EventSource: String, Codable {
+    case voice, message
 }
 
 struct EventAnalysis: Codable, Equatable {
     let summary: String
+    /// Most-fed first.
     let feeds: [FigureFeed]
-    let promotedRelationship: RelationshipPromotion
+    /// One per pair of Figures that took part together (none for a lone Figure).
+    let promotedRelationships: [RelationshipPromotion]
     let interpretationMode: String
+    /// true when keyword matching produced this instead of the language model
+    /// (backend unreachable, or backend has no API key).
+    var isKeywordGuess = false
 }
 

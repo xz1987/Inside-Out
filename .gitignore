@@ -11,3 +11,7 @@ apps/api/.env.*
 DerivedData/
 build/
 
+
+# Node
+node_modules/
+apps/api/dist/

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inside-out.local/schemas/ecosystem-snapshot.v1.schema.json",
+  "title": "EcosystemSnapshotV1",
+  "description": "Current Figure state sent by the client. exp and energy are integers 0–100.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "figures", "relationships", "seedMemories"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "ecosystem-snapshot.v1" },
+    "figures": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "level", "exp", "energy"],
+        "properties": {
+          "id": { "$ref": "#/$defs/figureId" },
+          "level": { "type": "integer", "minimum": 1, "maximum": 10 },
+          "exp": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "energy": { "type": "integer", "minimum": 0, "maximum": 100 }
+        }
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["figures", "score"],
+        "properties": {
+          "figures": { "type": "array", "items": { "$ref": "#/$defs/figureId" }, "minItems": 2, "maxItems": 2 },
+          "score": { "type": "integer" }
+        }
+      }
+    },
+    "seedMemories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "ownerFigureId", "state", "objectId", "objectName"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string" },
+          "ownerFigureId": { "$ref": "#/$defs/figureId" },
+          "state": { "type": "string", "enum": ["visible", "masked"] },
+          "objectId": { "type": ["string", "null"] },
+          "objectName": { "type": ["string", "null"] }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "figureId": { "type": "string", "enum": ["joy", "sadness", "anger", "fear"] }
+  }
+}

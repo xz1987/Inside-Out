@@ -8,9 +8,11 @@ struct ResultOverlay: View {
 
     @State private var expFilled = false
     @State private var replaying = false
+    @State private var showingOriginal = false
 
-    private var primary: FigureFeed { analysis.feeds[0] }
-    private var secondary: FigureFeed? { analysis.feeds.count > 1 ? analysis.feeds[1] : nil }
+    private var feeds: [FigureFeed] { Array(analysis.feeds.prefix(3)) }
+    private var slots: [ResultLayout.Slot] { ResultLayout.slots(count: feeds.count) }
+    private var bonds: [RelationshipPromotion] { analysis.promotedRelationships }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -18,10 +20,12 @@ struct ResultOverlay: View {
                 .offset(x: 20, y: 62)
                 .appear()
 
-            if let secondary {
-                BondArc(from: primary.figure.palette.base, to: secondary.figure.palette.base)
+            // The animated arc only fits between two side-by-side Figures;
+            // with three, the bond list below carries the relationships.
+            if feeds.count == 2, let bond = bonds.first {
+                BondArc(from: feeds[0].figure.palette.base, to: feeds[1].figure.palette.base)
                 bondHeart
-                Text("+\(analysis.promotedRelationship.points) bond")
+                Text("+\(bond.points) bond")
                     .font(.rounded(13, .black))
                     .foregroundStyle(.white)
                     .padding(.vertical, 4)
@@ -31,34 +35,26 @@ struct ResultOverlay: View {
                     .frame(width: 120)
                     .offset(x: 200 - 60, y: 236)
                     .appear(delay: 1.1, pop: true)
-
-                feedNumber(secondary, size: 28, centerX: 288, top: 206, delay: 0.7)
-                percentPill(secondary).offset(x: 316, y: 326)
-                FedColumn(feed: secondary, before: vm.baseline[secondary.figure], filled: expFilled)
-                    .offset(x: 203, y: 380)
             }
 
-            feedNumber(primary, size: 34, centerX: 102, top: 190, delay: 0.4)
-            percentPill(primary).offset(x: 140, y: 336)
-            FedColumn(feed: primary, before: vm.baseline[primary.figure], filled: expFilled)
-                .offset(x: 17, y: 380)
+            ForEach(Array(zip(feeds, slots).enumerated()), id: \.element.0.figure) { index, pair in
+                let (feed, slot) = pair
+                feedNumber(feed, size: slot.numberSize, centerX: slot.x, top: slot.numberTop, delay: 0.4 + Double(index) * 0.3)
+                if feeds.count > 1 {
+                    // A lone Figure is always 100% — the pill would add nothing.
+                    // Kept inside the artboard so the right-hand Figure's pill isn't clipped.
+                    percentPill(feed).offset(x: min(slot.x + slot.size * 0.3, 390 - 56), y: slot.y + slot.size * 0.25)
+                }
+                FedColumn(feed: feed, before: vm.baseline[feed.figure], filled: expFilled, width: slot.columnWidth)
+                    .offset(x: slot.x - slot.columnWidth / 2, y: slot.columnTop)
+            }
 
             Sparkles()
 
-            if secondary != nil {
-                HStack(spacing: 8) {
-                    Text("♥").foregroundStyle(Ink.heart)
-                    Text(bondLabel)
-                }
-                .font(.rounded(13, .heavy))
-                .foregroundStyle(Ink.secondary)
-                .padding(.vertical, 7)
-                .padding(.horizontal, 14)
-                .background(Capsule().fill(.white.opacity(0.55)))
-                .frame(width: 390)
-                .offset(y: 596)
+            BondList(bonds: bonds)
+                .frame(width: 390, height: 120, alignment: .bottom)
+                .offset(y: 530)
                 .appear(delay: 1.5)
-            }
 
             Button(action: vm.save) {
                 Text(vm.isSaved ? "Saved" : "Save this memory")
@@ -89,16 +85,11 @@ struct ResultOverlay: View {
         }
     }
 
-    private var bondLabel: String {
-        let pair = analysis.promotedRelationship
-        return "\(pair.firstFigure.displayName) & \(pair.secondFigure.displayName) grew closer"
-    }
-
     private var summaryCard: some View {
         // Replay sits on the timestamp row (not below the text as in the
         // design) so the card stays clear of the "+N" pop above the Figure.
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 6) {
                 Text(vm.capturedLabel.uppercased())
                     .font(.rounded(12, .heavy))
                     .tracking(1)
@@ -107,16 +98,45 @@ struct ResultOverlay: View {
                 if vm.inputMode == .voice {
                     replayChip
                 }
+                Button { showingOriginal = true } label: {
+                    Image(systemName: "text.quote")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Ink.primary)
+                        .frame(width: 28, height: 28)
+                        .background(Circle().fill(Ink.primary.opacity(0.07)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("See what you said")
             }
             Text(analysis.summary)
                 .font(.rounded(16, .bold))
                 .lineSpacing(2)
                 .lineLimit(2)
+            if analysis.isKeywordGuess {
+                // Be honest when the language model wasn't used.
+                Label("Offline guess from keywords — couldn’t reach your Figures", systemImage: "wifi.slash")
+                    .font(.rounded(12, .bold))
+                    .foregroundStyle(Ink.muted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
         }
         .padding(.vertical, 14)
         .padding(.horizontal, 18)
         .frame(width: 350, alignment: .leading)
         .glassCard()
+        .contentShape(Rectangle())
+        .onTapGesture { showingOriginal = true }
+        .sheet(isPresented: $showingOriginal) {
+            OriginalInputSheet(
+                text: vm.lastInputText,
+                source: vm.inputMode == .voice ? "You said · 0:" + String(format: "%02d", vm.recordedSeconds) : "You wrote",
+                onEdit: {
+                    showingOriginal = false
+                    vm.editLastInput()
+                }
+            )
+        }
     }
 
     /// No audio is recorded yet (Sprint 1), so this only toggles its label.
@@ -131,6 +151,8 @@ struct ResultOverlay: View {
                     .overlay(Image(systemName: "play.fill").font(.system(size: 8)).foregroundStyle(.white).offset(x: 1))
                 Text((replaying ? "Playing… " : "Replay · ") + "0:" + String(format: "%02d", vm.recordedSeconds))
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .fixedSize()
             }
             .font(.rounded(12, .heavy))
             .foregroundStyle(Ink.primary)
@@ -187,6 +209,11 @@ private struct FedColumn: View {
     let feed: FigureFeed
     let before: FigureState?
     let filled: Bool
+    var width: CGFloat = 170
+
+    /// Three columns share the screen, so everything shrinks a step.
+    private var compact: Bool { width < 150 }
+    private var barWidth: CGFloat { compact ? 92 : 118 }
 
     var body: some View {
         let palette = feed.figure.palette
@@ -196,9 +223,9 @@ private struct FedColumn: View {
         VStack(spacing: 8) {
             HStack(spacing: 6) {
                 Text(feed.figure.displayName)
-                    .font(.rounded(18, .black))
+                    .font(.rounded(compact ? 15 : 18, .black))
                 Text("Lv \(before?.level ?? 1)")
-                    .font(.rounded(12, .black))
+                    .font(.rounded(compact ? 11 : 12, .black))
                     .foregroundStyle(palette.badgeText)
                     .padding(.vertical, 2)
                     .padding(.horizontal, 8)
@@ -209,18 +236,18 @@ private struct FedColumn: View {
                 Capsule().fill(.white.opacity(0.7))
                 Capsule()
                     .fill(LinearGradient(colors: [palette.barStart, palette.dark], startPoint: .leading, endPoint: .trailing))
-                    .frame(width: 118 * CGFloat(filled ? endExp : startExp) / 100)
+                    .frame(width: barWidth * CGFloat(filled ? endExp : startExp) / 100)
             }
-            .frame(width: 118, height: 9)
+            .frame(width: barWidth, height: 9)
             .accessibilityLabel("Experience \(filled ? endExp : startExp) of 100")
 
             Text("“\(feed.voiceLine)”")
-                .font(.rounded(13, .bold))
+                .font(.rounded(compact ? 12 : 13, .bold))
                 .lineSpacing(1)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 12)
+                .padding(.vertical, compact ? 8 : 10)
+                .padding(.horizontal, compact ? 9 : 12)
                 .background(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .fill(.white.opacity(0.78))
@@ -237,7 +264,7 @@ private struct FedColumn: View {
                 .padding(.top, 8)
                 .appear(delay: 1.3)
         }
-        .frame(width: 170)
+        .frame(width: width)
         .appear(delay: 0.9)
     }
 }
@@ -290,5 +317,129 @@ private struct Sparkles: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+}
+
+/// "What you said" — the untouched input behind the summary, with a way back
+/// to edit and resend it (PRD §31 A).
+private struct OriginalInputSheet: View {
+    let text: String
+    let source: String
+    let onEdit: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(source.uppercased())
+                .font(.rounded(12, .heavy))
+                .tracking(1)
+                .foregroundStyle(Ink.label)
+            ScrollView {
+                Text(text)
+                    .font(.rounded(17, .semibold))
+                    .lineSpacing(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            }
+            .frame(maxHeight: 220)
+
+            Button(action: onEdit) {
+                Label("Edit and ask again", systemImage: "pencil")
+                    .font(.rounded(16, .heavy))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 54)
+                    .background(Capsule().fill(Ink.primary))
+            }
+            .buttonStyle(PressableStyle())
+
+            Button("Close") { dismiss() }
+                .font(.rounded(14, .bold))
+                .foregroundStyle(Ink.muted)
+                .frame(maxWidth: .infinity)
+        }
+        .foregroundStyle(Ink.primary)
+        .padding(.horizontal, 24)
+        .padding(.top, 28)
+        .padding(.bottom, 12)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        .presentationCornerRadius(34)
+        .presentationBackground(.white.opacity(0.94))
+    }
+}
+
+/// "X & Y grew closer  before → after", one row per promoted bond (0–3),
+/// stacked upward from just above the Save button.
+private struct BondList: View {
+    let bonds: [RelationshipPromotion]
+
+    var body: some View {
+        VStack(spacing: 6) {
+            ForEach(bonds, id: \.pair) { bond in
+                HStack(spacing: 8) {
+                    Text("♥").foregroundStyle(Ink.heart)
+                    Text("\(bond.firstFigure.displayName) & \(bond.secondFigure.displayName) grew closer")
+                    if let before = bond.before, let after = bond.after {
+                        Text("\(before) → \(after)")
+                            .monospacedDigit()
+                            .foregroundStyle(Ink.primary)
+                    } else {
+                        Text("+\(bond.points)")
+                            .monospacedDigit()
+                            .foregroundStyle(Ink.primary)
+                    }
+                }
+                .font(.rounded(13, .heavy))
+                .foregroundStyle(Ink.secondary)
+                .padding(.vertical, 7)
+                .padding(.horizontal, 14)
+                .background(Capsule().fill(.white.opacity(0.55)))
+                .accessibilityElement(children: .combine)
+            }
+        }
+    }
+}
+
+/// Where fed Figures stand on the result screen, shared by the stage
+/// (JournalView) and this overlay so balls, numbers and columns line up.
+enum ResultLayout {
+    struct Slot {
+        let x: CGFloat
+        let y: CGFloat
+        let size: CGFloat
+        let numberTop: CGFloat
+        let numberSize: CGFloat
+        let glow: Double
+        let lookX: Double
+        let columnTop: CGFloat
+        let columnWidth: CGFloat
+    }
+
+    /// Most-fed first. One: centred. Two: side by side. Three: most-fed in the
+    /// middle, the others either side, with narrower columns.
+    static func slots(count: Int) -> [Slot] {
+        switch count {
+        case 1:
+            return [Slot(x: 195, y: 305, size: 132, numberTop: 190, numberSize: 34, glow: 0.95, lookX: 0, columnTop: 380, columnWidth: 170)]
+        case 2:
+            return [
+                Slot(x: 102, y: 305, size: 124, numberTop: 190, numberSize: 34, glow: 0.95, lookX: 0.8, columnTop: 380, columnWidth: 170),
+                Slot(x: 288, y: 305, size: 100, numberTop: 206, numberSize: 28, glow: 0.6, lookX: -0.8, columnTop: 380, columnWidth: 170)
+            ]
+        default:
+            return [
+                Slot(x: 195, y: 298, size: 108, numberTop: 186, numberSize: 32, glow: 0.95, lookX: 0, columnTop: 370, columnWidth: 122),
+                Slot(x: 68, y: 314, size: 86, numberTop: 214, numberSize: 26, glow: 0.7, lookX: 0.6, columnTop: 370, columnWidth: 122),
+                Slot(x: 322, y: 318, size: 78, numberTop: 224, numberSize: 24, glow: 0.6, lookX: -0.6, columnTop: 370, columnWidth: 122)
+            ]
+        }
+    }
+
+    /// Resting spots for the Figures that sat this event out.
+    static func edges(count: Int) -> [(x: CGFloat, y: CGFloat, look: Double)] {
+        count >= 3
+            ? [(378, 232, -1)]
+            : [(14, 250, 1), (378, 250, -1), (14, 372, 1), (378, 372, -1)]
     }
 }

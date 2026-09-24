@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inside-out.local/schemas/client-session-response.v1.schema.json",
+  "title": "ClientSessionResponseV1",
+  "description": "What POST /api/v1/sessions/run returns to iOS: interpretation (real) + resolution (mock narrative).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sessionId", "traceId", "interpretation", "resolution", "fallback"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "client-session-response.v1" },
+    "sessionId": { "type": "string", "minLength": 1 },
+    "traceId": { "type": "string", "minLength": 1 },
+    "interpretation": { "$ref": "event-interpretation.v1.schema.json" },
+    "resolution": { "$ref": "ecosystem-resolution.v1.schema.json" },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["interpretation", "resolution"],
+      "description": "true when that part came from a local fixture/heuristic instead of the LLM (PRD §42.3).",
+      "properties": {
+        "interpretation": { "type": "boolean" },
+        "resolution": { "type": "boolean" }
+      }
+    }
+  }
+}

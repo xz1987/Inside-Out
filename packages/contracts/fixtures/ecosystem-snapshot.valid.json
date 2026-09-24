@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "ecosystem-snapshot.v1",
+  "figures": [
+    { "id": "joy", "level": 5, "exp": 64, "energy": 58 },
+    { "id": "sadness", "level": 2, "exp": 40, "energy": 32 },
+    { "id": "anger", "level": 3, "exp": 52, "energy": 70 },
+    { "id": "fear", "level": 2, "exp": 30, "energy": 46 }
+  ],
+  "relationships": [
+    { "figures": ["anger", "fear"], "score": 12 },
+    { "figures": ["joy", "sadness"], "score": 9 },
+    { "figures": ["joy", "anger"], "score": -4 }
+  ],
+  "seedMemories": [
+    { "id": "memory_seed_joy_01", "title": "Mia brought you coffee without asking", "ownerFigureId": "joy", "state": "visible", "objectId": "object_seed_joy_01", "objectName": "A warm paper cup" },
+    { "id": "memory_seed_sadness_01", "title": "Missed grandma’s call, again", "ownerFigureId": "sadness", "state": "visible", "objectId": "object_seed_sadness_01", "objectName": "A missed-call notification" },
+    { "id": "memory_seed_fear_01", "title": "Waiting for the exam results", "ownerFigureId": "fear", "state": "visible", "objectId": null, "objectName": null },
+    { "id": "memory_seed_anger_01", "title": "The group project nobody else finished", "ownerFigureId": "anger", "state": "visible", "objectId": "object_seed_anger_01", "objectName": "A half-empty slide deck" }
+  ]
+}

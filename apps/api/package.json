@@ -1,0 +1,33 @@
+{
+  "name": "inside-out-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/src/index.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "smoke:llm": "tsx scripts/smoke-llm.ts",
+    "try:input": "tsx scripts/try-input.ts"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "dotenv": "^18.0.3",
+    "express": "^5.2.1",
+    "openai": "^5.23.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^20.19.43",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
+  }
+}

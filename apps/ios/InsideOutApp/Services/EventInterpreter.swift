@@ -1,7 +1,9 @@
 import Foundation
 
 protocol EventInterpreting {
-    func interpret(eventText: String) async throws -> EventAnalysis
+    /// `context` is the current inner-world state; the backend needs it to
+    /// stage the ecosystem outcome, the local fallback ignores it.
+    func interpret(eventText: String, source: EventSource, context: EcosystemContext) async throws -> EventAnalysis
 }
 
 enum EventInterpreterError: LocalizedError {
@@ -54,7 +56,7 @@ struct LocalEventInterpreter: EventInterpreting {
         return matches
     }
 
-    func interpret(eventText: String) async throws -> EventAnalysis {
+    func interpret(eventText: String, source: EventSource, context: EcosystemContext) async throws -> EventAnalysis {
         let trimmed = eventText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             throw EventInterpreterError.emptyInput
@@ -101,13 +103,14 @@ struct LocalEventInterpreter: EventInterpreting {
         return EventAnalysis(
             summary: summary,
             feeds: feeds,
-            promotedRelationship: RelationshipPromotion(
+            promotedRelationships: [RelationshipPromotion(
                 firstFigure: selected[0],
                 secondFigure: selected[1],
                 points: 8,
                 reason: "They were both present in the same remembered event."
-            ),
-            interpretationMode: "Local prototype fallback"
+            )],
+            interpretationMode: "Local prototype fallback",
+            isKeywordGuess: true
         )
     }
 
