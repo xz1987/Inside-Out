@@ -130,7 +130,7 @@ describe('POST /api/v1/events/interpret', () => {
       .send({ inputType: 'voice', text: DRIVER });
     expect(res.status).toBe(200);
     expect(res.body.fallback).toBe(false);
-    expect(res.body.promptVersion).toBe('input-v1');
+    expect(res.body.promptVersion).toBe('input-v2');
     expect(validateInterpretation(res.body.interpretation).ok).toBe(true);
   });
 

@@ -53,7 +53,7 @@ describe('app', () => {
   it('reports health without leaking keys', async () => {
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
-    expect(res.body.llm.input).toEqual({ configured: false, model: 'openai.gpt-5-mini', promptVersion: 'input-v1' });
+    expect(res.body.llm.input).toEqual({ configured: false, model: 'openai.gpt-5-mini', promptVersion: 'input-v2' });
     expect(JSON.stringify(res.body)).not.toMatch(/apiKey/i);
     expect(res.headers['x-trace-id']).toBe(res.body.traceId);
   });

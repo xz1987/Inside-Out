@@ -4,6 +4,7 @@ import { loadSchema, validateInterpretation } from '../../contracts/validate.js'
 import { isTransientLlmError, LlmNotConfiguredError, type JsonLlm } from '../../llm/llmClient.js';
 import { interpretWithKeywords } from './keywordInterpreter.js';
 import { INPUT_PROMPT_V1 } from './prompts/input-v1.js';
+import { INPUT_PROMPT_V2 } from './prompts/input-v2.js';
 import {
   AnalysisTimeoutError,
   AnalysisUnavailableError,
@@ -27,7 +28,7 @@ export function llmOutputSchema(): object {
   return schema;
 }
 
-const PROMPTS: Record<string, string> = { 'input-v1': INPUT_PROMPT_V1 };
+const PROMPTS: Record<string, string> = { 'input-v1': INPUT_PROMPT_V1, 'input-v2': INPUT_PROMPT_V2 };
 
 /**
  * Domain A (PRD §39.1): turns one retrospective input into an
@@ -37,7 +38,7 @@ export class InputInterpreter {
   private readonly schema = llmOutputSchema();
   private readonly system: string;
 
-  constructor(private readonly llm: JsonLlm, readonly promptVersion = 'input-v1') {
+  constructor(private readonly llm: JsonLlm, readonly promptVersion = 'input-v2') {
     const prompt = PROMPTS[promptVersion];
     if (!prompt) throw new Error(`Unknown input prompt version: ${promptVersion}`);
     this.system = prompt;

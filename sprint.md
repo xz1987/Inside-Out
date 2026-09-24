@@ -40,7 +40,7 @@
 - [x] 确认 Cornell 网关支持 strict JSON Schema 输出（`npm run smoke:llm`：`openai.gpt-5-mini`，`json_schema` 模式，约 2.5 s）
 - [x] Orchestrator `POST /api/v1/sessions/run`（A → 校验 → B → 校验 → 合并；A 失败不调 B；B 文案失败用模板并标 fallback）
 - [x] Domain A — `POST /api/v1/events/interpret`：prompt `input-v1`、strict JSON Schema 输出、服务端校验 + 1 次纠错重试、无 key 时关键词回退、503/502 错误语义
-- [ ] Domain A prompt 调优：summary 偶尔超过 30 词；uncertainties 偏多（目前 UI 不展示，影响不大）
+- [x] Domain A prompt 调优 → `input-v2`：summary 一句话 ≤16 词（英文实测 10–13 词，中文 31 字，适配结果卡片两行），uncertainties ≤2；Figure 组合与 Feed 与 v1 一致
 - [x] Domain B — `POST /api/v1/ecosystem/resolve`：确定性规则决定变形/掠夺/降级/Mask/关系前后值，LLM（`ecosystem-mvp-v1`）只写关系理由和三步解释，只看 summary 不看原文
 - [x] iOS 改为调用 `/sessions/run`：发送 Figure 状态 / 关系分数 / 种子记忆作为 snapshot；目前只用返回的 relationship，evolution / raid / explanation 留给 Sprint 3
 - [x] iOS 端接入 `/api/v1/events/interpret`（`APIClient` + `RemoteEventInterpreter`），后端不可达时回退本地关键词并在结果页标注 “Offline guess”
@@ -138,3 +138,8 @@
 - `RemoteEventInterpreter`：关系取自 Domain B 的 promotedRelationship（含单 Figure 情况）；后端不可达时用本地关系分数补 before。
 - `JournalViewModel`：`relationships` 状态；保存时写入 after。结果页底部显示 “X & Y grew closer  before → after”。
 - 模拟器验证（真实网关）：别车 → “Anger & Fear 12 → 19，+7 bond”；保存后打字 Mia 咖啡 → 仅 Joy，“Joy & Sadness 9 → 13”；再次别车 → “19 → 27”（保存生效）；停掉后端 → 离线仍显示 “19 → 27” 并标注 Offline guess。
+
+### 2026-09-24（Sprint 2 收尾③：Domain A prompt `input-v2`，分支 `feat/result-details`）
+- 新增 `prompts/input-v2.ts` 并设为默认（v1 保留，可用 `INPUT_PROMPT_VERSION=input-v1` 对比）。
+- 真实网关对比：摘要从 v1 的 17–30 词降到 10–13 词（中文 31 字），不再被结果卡片截断；uncertainties 最多 2 条；Figure 组合、Feed、速度（4–7 s）不变；prompt 注入样例仍未被带偏。
+- `.env.example` 不再写死 prompt 版本（改为注释），本地 `.env` 中对应两行已注释，默认跟随代码最新版本。

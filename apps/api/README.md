@@ -62,7 +62,9 @@ there is no audio upload endpoint.
 - Timeout / network / 5xx → `503 analysis_timeout` with `retryable: true`.
 - Logs never include the user's text.
 
-Prompt: `src/domains/input/prompts/input-v1.ts`. Bump the version on any behaviour change.
+Prompt: `src/domains/input/prompts/input-v2.ts` (default; `input-v1` kept for comparison via
+`INPUT_PROMPT_VERSION`). v2 keeps the summary to one sentence (≤16 words) so it fits the two-line
+result card, and caps uncertainties at 2. Bump the version on any behaviour change.
 `npm run try:input` runs it against the real gateway on sample memories
 (`npm run try:input -- "your text"` for your own).
 
