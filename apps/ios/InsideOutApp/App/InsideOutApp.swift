@@ -4,7 +4,7 @@ import SwiftUI
 struct InsideOutApp: App {
     var body: some Scene {
         WindowGroup {
-            DailyEventView()
+            JournalView()
         }
     }
 }

@@ -21,11 +21,13 @@ struct LocalEventInterpreter: EventInterpreting {
     private let keywords: [FigureKind: [String]] = [
         .anger: [
             "angry", "anger", "annoyed", "unfair", "interrupt", "ignored",
-            "生气", "愤怒", "不公平", "打断", "被忽视", "烦"
+            "cut me off", "yelled", "rude",
+            "生气", "愤怒", "不公平", "打断", "被忽视", "烦", "吼", "别车"
         ],
         .fear: [
             "afraid", "fear", "worried", "nervous", "uncertain", "anxious",
-            "害怕", "担心", "紧张", "不确定", "焦虑"
+            "scared", "shaky", "happen again",
+            "害怕", "担心", "紧张", "不确定", "焦虑", "后怕", "发抖"
         ],
         .sadness: [
             "sad", "hurt", "lost", "lonely", "cry", "miss",
@@ -37,23 +39,28 @@ struct LocalEventInterpreter: EventInterpreting {
         ]
     ]
 
+    /// Number of keyword hits per Figure. Also drives the live Figure
+    /// reactions while the user is still talking.
+    func signalCounts(in text: String) -> [FigureKind: Int] {
+        let normalized = text.lowercased()
+        var matches: [FigureKind: Int] = [:]
+        for figure in FigureKind.allCases {
+            matches[figure] = keywords[figure, default: []].reduce(into: 0) { total, keyword in
+                if normalized.contains(keyword) {
+                    total += 1
+                }
+            }
+        }
+        return matches
+    }
+
     func interpret(eventText: String) async throws -> EventAnalysis {
         let trimmed = eventText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             throw EventInterpreterError.emptyInput
         }
 
-        let normalized = trimmed.lowercased()
-        var matches: [FigureKind: Int] = [:]
-
-        for figure in FigureKind.allCases {
-            let count = keywords[figure, default: []].reduce(into: 0) { total, keyword in
-                if normalized.contains(keyword) {
-                    total += 1
-                }
-            }
-            matches[figure] = count
-        }
+        var matches = signalCounts(in: trimmed)
 
         let hasSignal = matches.values.contains { $0 > 0 }
         if !hasSignal {
@@ -81,7 +88,8 @@ struct LocalEventInterpreter: EventInterpreting {
                 figure: figure,
                 feedAmount: 6 + (weight * 6),
                 concentration: Double(weight) / Double(totalWeight),
-                evidence: evidence(for: figure)
+                evidence: evidence(for: figure),
+                voiceLine: voiceLine(for: figure)
             )
         }
 
@@ -101,6 +109,19 @@ struct LocalEventInterpreter: EventInterpreting {
             ),
             interpretationMode: "Local prototype fallback"
         )
+    }
+
+    private func voiceLine(for figure: FigureKind) -> String {
+        switch figure {
+        case .anger:
+            "That crossed a line. It wasn’t fair."
+        case .fear:
+            "I’m worried it’ll happen again."
+        case .sadness:
+            "That one hurt. I’ll hold onto it."
+        case .joy:
+            "There’s something good here to keep."
+        }
     }
 
     private func evidence(for figure: FigureKind) -> String {
