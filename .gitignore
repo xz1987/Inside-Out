@@ -1,0 +1,13 @@
+.DS_Store
+
+# Server-only secrets
+apps/api/.env
+apps/api/.env.*
+!apps/api/.env.example
+
+# Xcode user state and build output
+**/xcuserdata/
+**/*.xcuserstate
+DerivedData/
+build/
+
