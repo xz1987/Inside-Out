@@ -22,12 +22,12 @@
 ## Sprint 1 — Functional Input（PRD §30）
 
 - [x] Message 输入：「or type it instead」底部弹层；**不设最少字数**（只拦截空白），后端上限 4000 字符防误粘贴
-- [ ] 语音录制（AVFoundation）：录音按钮、时长、暂停/继续/结束、删除重录、录音中 active state
-- [ ] 语音转文字：已决定放在手机端（Apple Speech framework），后端只收文字、不做音频上传
-- [ ] 语音 ≥ 5 秒有效输入校验
+- [x] 语音录制（AVFoundation）：录音按钮、时长、暂停/继续/结束、删除重录、录音中 active state
+- [x] 语音转文字：已决定放在手机端（Apple Speech framework），后端只收文字、不做音频上传
+- [x] 语音 ≥ 5 秒有效输入校验
 - [x] 语音为主入口、文字为次入口（UI 层面）
-- [~] Listening 屏：转写逐行展示 + Figure 按关键词实时变大已完成，但转写内容目前是写死的示例句（等真实录音接入后替换）
-- [~] 错误状态：分析失败保留 input + 「Tap Done to try again」✓、后端不可达回退本地 ✓；麦克风权限拒绝、转录失败待语音接入后做
+- [x] Listening 屏：Apple Speech 实时转写逐行展示 + Figure 按关键词实时变大
+- [x] 错误状态：分析失败保留 input + 「Tap Done to try again」、后端不可达回退本地、麦克风/语音权限拒绝与转录失败提示
 - [ ] 可选 prompt chips
 - [x] Loading 状态：Listening 页 Done/麦克风显示 “Thinking…”，打字弹层按钮显示 “Your Figures are listening…”；离开页面后迟到的结果会被丢弃
 
@@ -73,12 +73,25 @@
 
 - [x] 首次在完整 iOS SDK 下编译通过，模拟器可运行
 - [x] 修复缺少 Launch Screen 导致的兼容模式黑边（`INFOPLIST_KEY_UILaunchScreen_Generation = YES`）
-- [ ] 替换 bundle ID 占位符 `com.yourteam.InsideOutMVP`，配置 Development Team，真机安装
+- [x] 真机安装验收通过；Bundle Identifier 保持 `com.yourteam.InsideOutMVP`，Development Team 由每位开发者在本地 Xcode 选择，不写入仓库
 - [ ] CI 与双人 GitHub 协作流程（PRD §44、§48）
 
 ---
 
 ## 进度日志
+
+### 2026-09-24（Sprint 1：真实语音输入）
+- 新增 `SpeechRecordingService.swift`：AVFoundation 录制到临时 `.m4a`，Apple Speech 实时/最终转写，支持暂停、继续、结束与删除重录；可用时要求手机端识别。
+- Listening 流程移除写死示例句，接入真实时长与转写；录音 active 光圈、暂停状态、逐行 transcript 和 Figure 关键词反应均由实时状态驱动。
+- `Done` 在累计录音达到 5 秒前禁用并显示剩余秒数；最终转写为空、权限拒绝或识别失败均停留在可恢复状态。
+- 后端接口保持只接收 transcript 字符串，不上传音频；加入 Microphone / Speech Recognition usage descriptions。
+- Xcode 27 / iOS 27 `iPhone 18 Pro` 模拟器无警告构建成功，安装并启动成功（PID 35209）；当前 Xcode 已无原 sprint 记录的 iPhone 17 Pro runtime。
+- 修复模拟器录音有计时但 Speech 立即中断：Simulator 不再强制使用缺失/不稳定的 on-device speech asset，允许 Apple Speech hosted service；真机仍在支持时强制端侧识别。模拟器错误现在会显示错误 domain/code，并提示检查 `I/O › Audio Input › Mac microphone`。
+- 修复实体机结束录音后最终转写报 “cannot open”：释放 `AVAudioFile` 写入句柄并完成 `.m4a` 封装后再交给 Speech；若最终文件转写仍失败但实时 transcript 已有效，则安全回退到实时文字继续分析，不丢失用户输入。
+- 实体 iPhone 验收通过：可识别真实语音，结束录音后的 “cannot open” 不再出现。
+- 录音完成后的 Listening UI 改为 “Recorded”：主麦克风与 Pause 不再假装可操作，仍可删除重录或点 Done 重试分析。
+- 项目文件不提交 `DEVELOPMENT_TEAM`，两位开发者各自在 Xcode Signing & Capabilities 选择 Team；Bundle Identifier 保持 `com.yourteam.InsideOutMVP`。
+- 提交前验证：generic iOS device 无签名构建通过，后端 80/80 测试与 TypeScript typecheck 通过。
 
 ### 2026-09-24
 - Clone 仓库到本地，iPhone 17 Pro 模拟器（iOS 26.3）构建并运行成功。

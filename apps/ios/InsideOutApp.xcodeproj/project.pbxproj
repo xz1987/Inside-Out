@@ -20,6 +20,7 @@
 		A10000000000000000000013 /* FigureState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* FigureState.swift */; };
 		A10000000000000000000014 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* APIClient.swift */; };
 		A10000000000000000000015 /* RemoteEventInterpreter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000015 /* RemoteEventInterpreter.swift */; };
+		A10000000000000000000016 /* SpeechRecordingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000016 /* SpeechRecordingService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +38,7 @@
 		B10000000000000000000013 /* FigureState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigureState.swift; sourceTree = "<group>"; };
 		B10000000000000000000014 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		B10000000000000000000015 /* RemoteEventInterpreter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteEventInterpreter.swift; sourceTree = "<group>"; };
+		B10000000000000000000016 /* SpeechRecordingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecordingService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -92,6 +94,7 @@
 				B10000000000000000000003 /* EventInterpreter.swift */,
 				B10000000000000000000014 /* APIClient.swift */,
 				B10000000000000000000015 /* RemoteEventInterpreter.swift */,
+				B10000000000000000000016 /* SpeechRecordingService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -199,6 +202,7 @@
 				A10000000000000000000003 /* EventInterpreter.swift in Sources */,
 				A10000000000000000000014 /* APIClient.swift in Sources */,
 				A10000000000000000000015 /* RemoteEventInterpreter.swift in Sources */,
+				A10000000000000000000016 /* SpeechRecordingService.swift in Sources */,
 				A10000000000000000000006 /* Theme.swift in Sources */,
 				A10000000000000000000007 /* FigureView.swift in Sources */,
 				A10000000000000000000008 /* JournalViewModel.swift in Sources */,
@@ -256,6 +260,8 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Inside Out";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Record a daily event for your Figures.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Turn your spoken daily event into text on this iPhone.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 0.1.0;
@@ -275,6 +281,8 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Inside Out";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Record a daily event for your Figures.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Turn your spoken daily event into text on this iPhone.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 0.1.0;
@@ -311,4 +319,3 @@
 	};
 	rootObject = E10000000000000000000000 /* Project object */;
 }
-

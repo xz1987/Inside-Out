@@ -10,20 +10,7 @@ final class JournalViewModel: ObservableObject {
         case voice, typed
     }
 
-    /// Stand-in transcript until real recording + transcription lands (Sprint 1).
-    private static let demoSentences = [
-        "So on my way home from work,",
-        "this car just cut me off at the roundabout.",
-        "The driver yelled at me like it was my fault.",
-        "I keep thinking it could happen again tomorrow.",
-        "Honestly, I’m still a bit shaky."
-    ]
-    private static let demoWords: [(word: String, sentence: Int)] = demoSentences.enumerated().flatMap { index, sentence in
-        sentence.split(separator: " ").map { (String($0), index) }
-    }
-
     @Published private(set) var screen: Screen = .home
-    @Published private(set) var heardWords = 0
     @Published var isTyping = false
     @Published var typedText = ""
     @Published var typeError: String?
@@ -45,41 +32,46 @@ final class JournalViewModel: ObservableObject {
     @Published private(set) var interpretError: String?
     /// Exactly what was sent for the current result (transcript or typed text).
     @Published private(set) var lastInputText = ""
+    @Published private(set) var isFinalizingVoice = false
 
     private let interpreter: EventInterpreting
+    let voiceRecorder: SpeechRecordingService
     /// Only used for the live Figure reactions while listening.
     private let keywordSignals = LocalEventInterpreter()
-    private var listenTask: Task<Void, Never>?
     private var pendingTask: Task<Void, Never>?
     /// Bumped on every navigation so late results from an abandoned request are dropped.
     private var navigation = 0
 
-    init(interpreter: EventInterpreting = RemoteEventInterpreter()) {
+    init(interpreter: EventInterpreting = RemoteEventInterpreter(),
+         voiceRecorder: SpeechRecordingService? = nil) {
         self.interpreter = interpreter
+        self.voiceRecorder = voiceRecorder ?? SpeechRecordingService()
     }
 
     // MARK: - Derived state
 
     var showsStage: Bool { [.home, .listening, .result].contains(screen) }
     var showsTabs: Bool { [.home, .figures, .memories].contains(screen) }
-    var canFinishListening: Bool { heardWords > 8 }
+    var canFinishListening: Bool { voiceRecorder.isDurationValid }
+    var isVoiceBusy: Bool {
+        isFinalizingVoice || isInterpreting || voiceRecorder.state == .requestingPermission || voiceRecorder.state == .transcribing
+    }
 
     var transcriptSoFar: String {
-        Self.demoWords.prefix(heardWords).map(\.word).joined(separator: " ")
+        voiceRecorder.transcript
     }
 
     /// The last three sentences heard, oldest first.
     var transcriptLines: [(id: Int, text: String)] {
-        var sentences: [Int: [String]] = [:]
-        for item in Self.demoWords.prefix(heardWords) {
-            sentences[item.sentence, default: []].append(item.word)
-        }
-        return sentences.keys.sorted().suffix(3).map { ($0, sentences[$0]!.joined(separator: " ")) }
+        let words = transcriptSoFar.split(whereSeparator: \.isWhitespace).map(String.init)
+        return stride(from: 0, to: words.count, by: 8).map { start in
+            (start / 8, words[start..<min(start + 8, words.count)].joined(separator: " "))
+        }.suffix(3)
     }
 
     var listeningClock: String {
-        let seconds = Int((Double(heardWords) * 0.21).rounded())
-        return "0:" + String(format: "%02d", seconds)
+        let seconds = Int(voiceRecorder.elapsedSeconds)
+        return String(format: "%d:%02d", seconds / 60, seconds % 60)
     }
 
     /// How strongly each Figure reacts to what has been said so far (0–2).
@@ -96,7 +88,6 @@ final class JournalViewModel: ObservableObject {
     // MARK: - Navigation
 
     func go(_ destination: Screen) {
-        listenTask?.cancel()
         pendingTask?.cancel()
         navigation += 1
         isInterpreting = false
@@ -106,40 +97,54 @@ final class JournalViewModel: ObservableObject {
             toast = nil
             screen = destination
         }
-        if destination == .listening {
-            startListening()
-        }
     }
 
     func micTapped() {
         switch screen {
-        case .home: go(.listening)
-        case .listening: finishListening()
+        case .home: Task { await beginVoiceRecording() }
+        case .listening: Task { await voiceRecorder.togglePause() }
         default: break
         }
     }
 
-    private func startListening() {
-        heardWords = 0
-        listenTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(700))
-            while !Task.isCancelled {
-                guard let self, self.heardWords < Self.demoWords.count else { return }
-                // No withAnimation: animating text updates cross-fades every word.
-                // Figure growth animates on its own via `.animation(value: levels)`.
-                self.heardWords += 1
-                try? await Task.sleep(for: .milliseconds(210))
+    private func beginVoiceRecording() async {
+        guard !isVoiceBusy else { return }
+        if await voiceRecorder.startNewRecording() {
+            go(.listening)
+        }
+    }
+
+    func finishListening() {
+        guard canFinishListening, !isVoiceBusy else { return }
+        Task {
+            let started = navigation
+            isFinalizingVoice = true
+            defer { isFinalizingVoice = false }
+            do {
+                let capture: SpeechRecordingService.Capture
+                if voiceRecorder.state == .finished, let url = voiceRecorder.recordingURL {
+                    capture = .init(transcript: voiceRecorder.transcript,
+                                    duration: voiceRecorder.elapsedSeconds, fileURL: url)
+                } else {
+                    capture = try await voiceRecorder.finishAndTranscribe()
+                }
+                guard navigation == started, screen == .listening else { return }
+                recordedSeconds = Int(capture.duration.rounded())
+                await interpret(capture.transcript, mode: .voice)
+            } catch {
+                // The recorder owns the user-facing error and keeps the audio for retry.
             }
         }
     }
 
-    /// Also the retry action after an error — the transcript is kept.
-    func finishListening() {
-        guard canFinishListening, !isInterpreting else { return }
-        recordedSeconds = Int((Double(heardWords) * 0.21).rounded())
-        let text = transcriptSoFar
-        listenTask?.cancel()
-        Task { await interpret(text, mode: .voice) }
+    func deleteAndRerecord() {
+        guard !isVoiceBusy else { return }
+        Task { _ = await voiceRecorder.startNewRecording() }
+    }
+
+    func cancelVoice() {
+        voiceRecorder.deleteRecording()
+        go(.home)
     }
 
     func openTyping() {

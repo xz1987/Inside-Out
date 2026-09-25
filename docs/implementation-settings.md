@@ -2,13 +2,31 @@
 
 ## Implemented scope
 
-1. The user writes about one daily event.
-2. The local MVP interpreter selects two Figures to feed.
-3. It assigns Feed amount and concentration.
-4. It promotes one relationship between those Figures.
-5. The result explains why each Figure participated.
+1. The user records or writes about one daily event.
+2. Voice is recorded locally with AVFoundation and transcribed on the phone with
+   Apple Speech; audio is never uploaded to the backend.
+3. The interpreter selects the Figures to feed, assigns Feed and concentration,
+   and promotes the relevant relationships.
+4. The result explains why each Figure participated.
 
-## Current mode
+## Voice input
+
+- Tap the home microphone to start recording.
+- The Listening screen shows real elapsed time and partial transcription.
+- The main microphone and the explicit control pause/resume recording.
+- “Delete & re-record” discards the local temporary file and starts over.
+- “Done” is enabled after 5 seconds of accumulated recorded time, then performs
+  a final transcription before sending text to the existing session endpoint.
+- Microphone and Speech Recognition permissions are declared in generated
+  `Info.plist` settings.
+
+The Simulator can verify build, launch, and UI states, but microphone input and
+Speech authorization require final validation on a signed physical iPhone. For
+development, Simulator builds allow Apple Speech's hosted recognition because
+the Simulator may not contain usable on-device speech assets; signed iPhone
+builds still require on-device recognition whenever the device supports it.
+
+## Current interpretation mode
 
 `LocalEventInterpreter` is intentionally deterministic and runs without an API
 key. It recognizes a small English/Chinese keyword set for Joy, Sadness, Anger,
@@ -54,12 +72,8 @@ the two AI domains. See the full PRD for the versioned schema and merge plan.
 
 ## Not implemented yet
 
-- Voice recording
-- Backend server
-- Live model calls
 - Replay
 - Transformation
 - Raid
 - Memory masking
 - Long-term persistence
-

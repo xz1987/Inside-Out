@@ -12,7 +12,7 @@ struct JournalView: View {
                 ZStack(alignment: .topLeading) {
                     BackgroundBlobs()
                     if vm.showsStage {
-                        StageView(vm: vm)
+                        StageView(vm: vm, recorder: vm.voiceRecorder)
                     }
                     screenContent
                     if vm.showsTabs {
@@ -39,9 +39,9 @@ struct JournalView: View {
     private var screenContent: some View {
         switch vm.screen {
         case .home:
-            HomeOverlay(vm: vm).transition(.opacity)
+            HomeOverlay(vm: vm, recorder: vm.voiceRecorder).transition(.opacity)
         case .listening:
-            ListeningOverlay(vm: vm).transition(.opacity)
+            ListeningOverlay(vm: vm, recorder: vm.voiceRecorder).transition(.opacity)
         case .result:
             if let analysis = vm.analysis {
                 ResultOverlay(vm: vm, analysis: analysis).transition(.opacity)
@@ -69,6 +69,7 @@ private struct StageSlot {
 
 private struct StageView: View {
     @ObservedObject var vm: JournalViewModel
+    @ObservedObject var recorder: SpeechRecordingService
 
     var body: some View {
         let listening = vm.screen == .listening
@@ -86,7 +87,10 @@ private struct StageView: View {
                     .zIndex(kind == .fear ? 4 : 6)
             }
 
-            MicButton(listening: listening, thinking: vm.isInterpreting, diameter: micSize, action: vm.micTapped)
+            MicButton(listening: listening, active: recorder.isRecording, paused: recorder.isPaused,
+                      recorded: recorder.isFinalized, thinking: vm.isVoiceBusy,
+                      canInteract: !listening || recorder.canTogglePause,
+                      diameter: micSize, action: vm.micTapped)
                 .offset(x: mic.x - micSize / 2, y: mic.y - micSize / 2)
                 .opacity(result ? 0 : 1)
                 .scaleEffect(result ? 0.3 : 1)
@@ -155,13 +159,17 @@ private struct StageView: View {
 
 private struct MicButton: View {
     let listening: Bool
+    let active: Bool
+    let paused: Bool
+    let recorded: Bool
     let thinking: Bool
+    let canInteract: Bool
     let diameter: CGFloat
     let action: () -> Void
 
     var body: some View {
         ZStack {
-            if listening {
+            if listening && active {
                 ListeningRings(diameter: diameter)
             }
             Circle()
@@ -172,7 +180,7 @@ private struct MicButton: View {
             Button(action: action) {
                 VStack(spacing: 8) {
                     MicGlyph()
-                    Text(thinking ? "Thinking…" : listening ? "Listening…" : "Tap to tell me")
+                    Text(label)
                         .font(.rounded(14, .heavy))
                         .foregroundStyle(Ink.primary)
                 }
@@ -182,9 +190,26 @@ private struct MicButton: View {
                 .shadow(color: shadowColor, radius: 25, y: 20)
             }
             .buttonStyle(PressableStyle())
-            .accessibilityLabel(listening ? "Stop and share" : "Start telling")
+            .disabled(thinking || !canInteract)
+            .accessibilityLabel(accessibilityLabel)
         }
         .frame(width: diameter, height: diameter)
+    }
+
+    private var label: String {
+        if thinking { return "Thinking…" }
+        if recorded { return "Recorded" }
+        if paused { return "Paused" }
+        if listening { return "Listening…" }
+        return "Tap to tell me"
+    }
+
+    private var accessibilityLabel: String {
+        if thinking { return "Finishing recording" }
+        if recorded { return "Recording saved" }
+        if paused { return "Resume recording" }
+        if listening { return "Pause recording" }
+        return "Start recording a daily event"
     }
 
     private var gradient: RadialGradient {
@@ -245,6 +270,7 @@ private struct ListeningRings: View {
 
 private struct HomeOverlay: View {
     @ObservedObject var vm: JournalViewModel
+    @ObservedObject var recorder: SpeechRecordingService
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -271,6 +297,15 @@ private struct HomeOverlay: View {
             }
             .frame(width: 390)
             .offset(y: 630)
+
+            if let error = recorder.errorMessage {
+                Text(error)
+                    .font(.rounded(13, .bold))
+                    .foregroundStyle(Color(hex: 0xC9463A))
+                    .multilineTextAlignment(.center)
+                    .frame(width: 330)
+                    .offset(x: 30, y: 674)
+            }
         }
     }
 }
@@ -307,12 +342,13 @@ private struct GreetingPill: View {
 
 private struct ListeningOverlay: View {
     @ObservedObject var vm: JournalViewModel
+    @ObservedObject var recorder: SpeechRecordingService
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             HStack(spacing: 8) {
-                PulsingDot()
-                Text(vm.isInterpreting ? "Your Figures are thinking it over" : "Listening · \(vm.listeningClock)")
+                PulsingDot(active: recorder.isRecording)
+                Text(statusText)
                     .monospacedDigit()
             }
             .font(.rounded(13, .heavy))
@@ -325,10 +361,12 @@ private struct ListeningOverlay: View {
                 .frame(width: 330, height: 220, alignment: .bottom)
                 .offset(x: 30, y: 112)
 
-            if let error = vm.interpretError {
+            if let error = vm.interpretError ?? recorder.errorMessage {
                 VStack(spacing: 2) {
                     Text(error)
-                    Text("Tap Done to try again").foregroundStyle(Ink.muted)
+                    if vm.interpretError != nil {
+                        Text("Tap Done to try again").foregroundStyle(Ink.muted)
+                    }
                 }
                 .font(.rounded(13, .bold))
                 .foregroundStyle(Color(hex: 0xC9463A))
@@ -337,16 +375,31 @@ private struct ListeningOverlay: View {
                 .padding(.horizontal, 16)
                 .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.white.opacity(0.8)))
                 .frame(width: 390)
-                .offset(y: 636)
+                .offset(y: 614)
                 .transition(.opacity)
             }
 
+            HStack(spacing: 16) {
+                Button(action: vm.micTapped) {
+                    Label(pauseLabel, systemImage: pauseIcon)
+                }
+                .disabled(vm.isVoiceBusy || !recorder.canTogglePause)
+                Button(action: vm.deleteAndRerecord) {
+                    Label("Delete & re-record", systemImage: "trash")
+                }
+                .disabled(vm.isVoiceBusy)
+            }
+            .font(.rounded(13, .bold))
+            .foregroundStyle(Ink.muted)
+            .frame(width: 390)
+            .offset(y: 659)
+
             Button(action: vm.finishListening) {
                 HStack(spacing: 8) {
-                    if vm.isInterpreting {
+                    if vm.isVoiceBusy {
                         ProgressView().tint(.white).controlSize(.small)
                     }
-                    Text(vm.isInterpreting ? "Thinking…" : "Done")
+                    Text(vm.isVoiceBusy ? "Thinking…" : "Done")
                 }
                     .font(.rounded(15, .heavy))
                     .foregroundStyle(.white)
@@ -356,13 +409,21 @@ private struct ListeningOverlay: View {
                     .shadow(color: Ink.primary.opacity(0.25), radius: 12, y: 10)
             }
             .buttonStyle(PressableStyle())
-            .disabled(vm.isInterpreting)
+            .disabled(!vm.canFinishListening || vm.isVoiceBusy)
             .opacity(vm.canFinishListening ? 1 : 0.4)
             .animation(.easeInOut(duration: 0.4), value: vm.canFinishListening)
             .frame(width: 390)
-            .offset(y: 706)
+            .offset(y: 700)
 
-            Button { vm.go(.home) } label: {
+            if !vm.canFinishListening {
+                Text("Keep talking \(recorder.secondsRemaining) more second\(recorder.secondsRemaining == 1 ? "" : "s")")
+                    .font(.rounded(12, .bold))
+                    .foregroundStyle(Ink.muted)
+                    .frame(width: 390)
+                    .offset(y: 748)
+            }
+
+            Button(action: vm.cancelVoice) {
                 Text("Cancel")
                     .font(.rounded(14, .bold))
                     .foregroundStyle(Ink.muted)
@@ -370,8 +431,26 @@ private struct ListeningOverlay: View {
                     .padding(.horizontal, 16)
             }
             .frame(width: 390)
-            .offset(y: 762)
+            .offset(y: 776)
         }
+    }
+
+    private var statusText: String {
+        if vm.isInterpreting { return "Your Figures are thinking it over" }
+        if recorder.state == .transcribing || vm.isFinalizingVoice { return "Finishing transcript…" }
+        if recorder.isFinalized { return "Recording saved · \(vm.listeningClock)" }
+        if recorder.isPaused { return "Paused · \(vm.listeningClock)" }
+        return "Recording · \(vm.listeningClock)"
+    }
+
+    private var pauseLabel: String {
+        if recorder.isFinalized { return "Recorded" }
+        return recorder.isPaused ? "Resume" : "Pause"
+    }
+
+    private var pauseIcon: String {
+        if recorder.isFinalized { return "checkmark.circle.fill" }
+        return recorder.isPaused ? "play.fill" : "pause.fill"
     }
 
     private var transcript: some View {
@@ -395,12 +474,14 @@ private struct ListeningOverlay: View {
 }
 
 private struct PulsingDot: View {
+    let active: Bool
+
     var body: some View {
         Ticker { t in
             Circle()
-                .fill(Color(hex: 0xFF6F7D))
+                .fill(active ? Color(hex: 0xFF6F7D) : Ink.muted)
                 .frame(width: 8, height: 8)
-                .opacity(1 - 0.7 * wave(t, period: 1.2))
+                .opacity(active ? 1 - 0.7 * wave(t, period: 1.2) : 0.7)
         }
         .frame(width: 8, height: 8)
     }
