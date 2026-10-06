@@ -39,6 +39,9 @@
 		B10000000000000000000014 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		B10000000000000000000015 /* RemoteEventInterpreter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteEventInterpreter.swift; sourceTree = "<group>"; };
 		B10000000000000000000016 /* SpeechRecordingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecordingService.swift; sourceTree = "<group>"; };
+		B10000000000000000000017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B10000000000000000000018 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		B10000000000000000000019 /* Local.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig.example; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +59,7 @@
 			isa = PBXGroup;
 			children = (
 				D10000000000000000000001 /* InsideOutApp */,
+				D10000000000000000000008 /* Config */,
 				D10000000000000000000006 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -63,6 +67,7 @@
 		D10000000000000000000001 /* InsideOutApp */ = {
 			isa = PBXGroup;
 			children = (
+				B10000000000000000000017 /* Info.plist */,
 				D10000000000000000000002 /* App */,
 				D10000000000000000000003 /* Models */,
 				D10000000000000000000004 /* Services */,
@@ -127,6 +132,15 @@
 				B10000000000000000000012 /* MemoriesScreen.swift */,
 			);
 			path = Journal;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000008 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000018 /* Debug.xcconfig */,
+				B10000000000000000000019 /* Local.xcconfig.example */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -254,15 +268,13 @@
 		};
 		F10000000000000000000005 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B10000000000000000000018 /* Debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Inside Out";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Record a daily event for your Figures.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Turn your spoken daily event into text on this iPhone.";
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = InsideOutApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourteam.InsideOutMVP;
@@ -276,14 +288,12 @@
 		F10000000000000000000006 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				API_BASE_URL = "https://example.invalid";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Inside Out";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Record a daily event for your Figures.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Turn your spoken daily event into text on this iPhone.";
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = InsideOutApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourteam.InsideOutMVP;

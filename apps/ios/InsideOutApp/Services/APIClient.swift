@@ -2,13 +2,38 @@ import Foundation
 
 /// Talks to apps/api. No AI keys live in the app — only the backend URL.
 struct APIClient {
-    /// Override with the `API_BASE_URL` environment variable in the Xcode
-    /// scheme (e.g. a LAN IP or tunnel when running on a physical iPhone).
+    /// Resolution order:
+    /// 1. Xcode scheme environment override (useful for one-off testing).
+    /// 2. API_BASE_URL embedded from Debug.xcconfig / Local.xcconfig.
+    /// 3. localhost for Simulator development.
+    ///
+    /// A physical iPhone must use the Mac's LAN/.local address or an HTTPS
+    /// tunnel. `localhost` on an iPhone points back to the iPhone itself.
     static let defaultBaseURL: URL = {
-        if let value = ProcessInfo.processInfo.environment["API_BASE_URL"], let url = URL(string: value) {
+        let environmentValue = ProcessInfo.processInfo.environment["API_BASE_URL"]
+        let bundleValue = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String
+
+        for value in [environmentValue, bundleValue].compactMap({ $0 }) {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let url = URL(string: trimmed),
+               let scheme = url.scheme?.lowercased(),
+               ["http", "https"].contains(scheme),
+               url.host != nil {
+                return url
+            }
+        }
+
+        #if targetEnvironment(simulator)
+        return URL(string: "http://localhost:3000")!
+        #else
+        // This should only be reached when the local xcconfig was not created.
+        // The request will fail cleanly and the result UI will identify the
+        // on-device keyword fallback instead of exposing a server secret.
+        if let url = URL(string: "http://localhost:3000") {
             return url
         }
-        return URL(string: "http://localhost:3000")!
+        fatalError("Invalid fallback API URL")
+        #endif
     }()
 
     var baseURL: URL = APIClient.defaultBaseURL

@@ -8,6 +8,7 @@ apps/api/.env.*
 # Xcode user state and build output
 **/xcuserdata/
 **/*.xcuserstate
+apps/ios/Config/Local.xcconfig
 DerivedData/
 build/
 

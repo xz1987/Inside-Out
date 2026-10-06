@@ -5,6 +5,11 @@ import { gatewayModel, loadConfig, normalizeBaseURL } from '../src/config.js';
 import { toLlmSchema } from '../src/llm/llmClient.js';
 
 describe('config', () => {
+  it('listens on local interfaces by default and permits an explicit host', () => {
+    expect(loadConfig({}).host).toBe('0.0.0.0');
+    expect(loadConfig({ HOST: '127.0.0.1' }).host).toBe('127.0.0.1');
+  });
+
   it('appends /v1 like the course example', () => {
     expect(normalizeBaseURL('https://api.ai.it.cornell.edu')).toBe('https://api.ai.it.cornell.edu/v1');
     expect(normalizeBaseURL('https://api.ai.it.cornell.edu/')).toBe('https://api.ai.it.cornell.edu/v1');

@@ -19,6 +19,7 @@ export type ReasoningEffort = 'minimal' | 'low' | 'medium' | 'high';
 const REASONING_EFFORTS: readonly string[] = ['minimal', 'low', 'medium', 'high'];
 
 export interface AppConfig {
+  host: string;
   port: number;
   appEnv: string;
   llm: Record<Domain, LlmDomainConfig>;
@@ -66,6 +67,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   });
 
   return {
+    // Bind all local interfaces so a signed iPhone on the same network can
+    // reach the development server. API keys remain server-side in .env.
+    host: blank(env.HOST) ?? '0.0.0.0',
     port: Number(env.PORT) || 3000,
     appEnv: env.APP_ENV || 'development',
     llm: {

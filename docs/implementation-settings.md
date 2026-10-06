@@ -26,21 +26,37 @@ development, Simulator builds allow Apple Speech's hosted recognition because
 the Simulator may not contain usable on-device speech assets; signed iPhone
 builds still require on-device recognition whenever the device supports it.
 
-## Current interpretation mode
+## Interpretation mode
 
-`LocalEventInterpreter` is intentionally deterministic and runs without an API
-key. It recognizes a small English/Chinese keyword set for Joy, Sadness, Anger,
-and Fear. This is a functional UI fallback, not a psychological assessment.
+The iOS app sends only transcript text and the ecosystem snapshot to the local
+Node backend. The backend uses the two domain keys below and returns the model
+interpretation. If the backend cannot be reached, `LocalEventInterpreter`
+provides a deterministic English/Chinese keyword fallback and the result page
+labels it as an offline guess.
 
-## Future API boundary
+## API boundary and physical iPhone setup
 
-The two future keys are stored only in `apps/api/.env`:
+The two keys are stored only in `apps/api/.env`:
 
 - `INPUT_DOMAIN_API_KEY`
 - `ECOSYSTEM_DOMAIN_API_KEY`
 
-The iOS app will call one backend origin. The backend—not the iPhone—will call
-the two AI domains. See the full PRD for the versioned schema and merge plan.
+The iOS app calls one backend origin. The backend—not the iPhone—calls the two
+AI domains.
+
+For Simulator, `Config/Debug.xcconfig` defaults to
+`http://localhost:3000`. For a physical iPhone:
+
+1. Duplicate `apps/ios/Config/Local.xcconfig.example` as
+   `apps/ios/Config/Local.xcconfig`.
+2. Set `API_BASE_URL = http:/$()/your-mac-name.local:3000`, or use an HTTPS
+   tunnel/staging URL. `Local.xcconfig` is ignored by Git.
+3. Run `npm run dev` in `apps/api`; it listens on `0.0.0.0` so the phone can
+   reach the Mac.
+4. Run the Debug app from Xcode and allow its Local Network permission.
+
+If the Mac and iPhone are on campus/guest Wi-Fi and `.local` fails, the network
+is probably isolating peers; use an HTTPS tunnel or a different local network.
 
 ## Xcode target
 
@@ -57,7 +73,7 @@ the two AI domains. See the full PRD for the versioned schema and merge plan.
 
 - Prompt: “Talk about a daily event”
 - Multi-line message input
-- Minimum 15 characters
+- Blank-only input is rejected; there is no minimum character count
 - Loading and error states
 
 ### Interpretation state

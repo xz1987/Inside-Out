@@ -74,11 +74,18 @@
 - [x] 首次在完整 iOS SDK 下编译通过，模拟器可运行
 - [x] 修复缺少 Launch Screen 导致的兼容模式黑边（`INFOPLIST_KEY_UILaunchScreen_Generation = YES`）
 - [x] 真机安装验收通过；Bundle Identifier 保持 `com.yourteam.InsideOutMVP`，Development Team 由每位开发者在本地 Xcode 选择，不写入仓库
+- [x] 真机 API 链路：Debug xcconfig 可指向每位开发者的 Mac / HTTPS tunnel，iOS 包含局域网声明，后端监听 `0.0.0.0`，key 仅留在后端 `.env`
 - [ ] CI 与双人 GitHub 协作流程（PRD §44、§48）
 
 ---
 
 ## 进度日志
+
+### 2026-09-29（实体 iPhone 调用后端 AI）
+- 修复真机上 `localhost` 指向手机自身导致后端不可达的问题：`APIClient` 可从 App 构建配置读取 `API_BASE_URL`。
+- 新增 `Config/Debug.xcconfig` 与 `Local.xcconfig.example`；每位开发者使用被 Git 忽略的 `Local.xcconfig` 配置自己的 `.local` / LAN / HTTPS tunnel 地址。
+- 新增明确 `Info.plist`，包含 Local Network 用途说明和最小范围的 `NSAllowsLocalNetworking`；Release 不默认放宽公网 ATS。
+- Node 后端默认监听 `0.0.0.0:3000`，让同网络 iPhone 可以访问；两个 API key 仍只从 `apps/api/.env` 读取，不进入 Swift / xcconfig / Git。
 
 ### 2026-09-24（Sprint 1：真实语音输入）
 - 新增 `SpeechRecordingService.swift`：AVFoundation 录制到临时 `.m4a`，Apple Speech 实时/最终转写，支持暂停、继续、结束与删除重录；可用时要求手机端识别。

@@ -13,12 +13,31 @@ npm run smoke:llm         # checks the gateway + whether strict JSON Schema outp
 npm run dev               # http://localhost:3000/health
 ```
 
+### Physical iPhone development
+
+`npm run dev` binds to `0.0.0.0` by default, so the same backend is reachable
+from an iPhone when the Mac and phone can communicate on the local network.
+The server still reads both AI keys only from `apps/api/.env`; the phone never
+receives either key.
+
+1. Confirm `http://localhost:3000/health` works on the Mac.
+2. In Xcode, duplicate `apps/ios/Config/Local.xcconfig.example` as
+   `Local.xcconfig`. This file is ignored by Git.
+3. Set `API_BASE_URL` to `http:/$()/your-mac-name.local:3000`, or use an HTTPS
+   tunnel/staging URL. Keep the xcconfig `$()` spelling; it prevents `//` from
+   being parsed as a comment.
+4. Run the Debug build on iPhone and allow the Local Network prompt.
+
+Campus and guest Wi-Fi often isolate devices. If `.local` cannot be reached,
+use an HTTPS tunnel or a network/hotspot where the Mac and iPhone can reach one
+another. Do not solve this by copying an API key into Xcode.
+
 Defaults target the Cornell AI gateway (`LLM_HOST=https://api.ai.it.cornell.edu`),
 which is OpenAI-compatible: `/v1` is appended automatically and model ids get the
 `openai.` prefix (e.g. `openai.gpt-5-mini`). For direct OpenAI, set
 `LLM_HOST=https://api.openai.com/v1`.
 
-One `OPENAI_API_KEY` serves both domains. `INPUT_DOMAIN_API_KEY` /
+One `OPENAI_API_KEY` can serve both domains. `INPUT_DOMAIN_API_KEY` /
 `ECOSYSTEM_DOMAIN_API_KEY` override it per domain when you have separate keys.
 
 ## Layout

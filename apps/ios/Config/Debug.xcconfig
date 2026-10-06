@@ -1,0 +1,4 @@
+// Shared, non-secret defaults. Local.xcconfig is gitignored so each developer
+// can point a physical iPhone at their own Mac or HTTPS development tunnel.
+API_BASE_URL = http:/$()/localhost:3000
+#include? "Local.xcconfig"

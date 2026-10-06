@@ -1,0 +1,9 @@
+// Copy this file to Local.xcconfig (which is gitignored), then replace the
+// hostname. In System Settings > General > Sharing, the Local hostname is the
+// value ending in .local. Mac and iPhone must be able to reach each other.
+//
+// LAN example:
+API_BASE_URL = http:/$()/your-mac-name.local:3000
+//
+// HTTPS tunnel/staging example (recommended on campus/guest Wi-Fi):
+// API_BASE_URL = https:/$()/your-tunnel.example
