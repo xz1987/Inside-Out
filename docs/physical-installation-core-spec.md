@@ -72,16 +72,17 @@ Default normalized settings:
 
 | Setting | Default | Meaning |
 |---|---:|---|
-| Minimum change | 5 | Smallest non-zero delta sent for a participating Figure |
-| Maximum change per event | 25 | Largest delta sent to one channel for one event |
+| Air minimum change | 5 | Smallest non-zero transcription delta for an air Figure |
+| Water minimum change | 5 | Smallest non-zero transcription delta for a water Figure |
+| Maximum change per event | 25 | Largest transcription delta sent to one channel for one event |
 | Air interpretation total | 100 | App-side cumulative cap for each air channel; configurable to 500 |
 | Water interpretation total | 100 | App-side cumulative cap for each water channel; configurable to 600 |
 
 Rules:
 
 1. Convert each valid Figure Feed into a normalized `0...100` delta.
-2. A participating Figure is clamped to the configured minimum and per-event
-   maximum.
+2. A participating Figure is clamped to its medium's air/water minimum and the
+   transcription per-event maximum.
 3. Clamp again against that channel's remaining air/water interpretation
    capacity.
 4. Send all eight channel values in one command; zero means no change.
@@ -91,8 +92,10 @@ Rules:
    replay, or send the missed physical command after reconnection.
 8. A new installation session resets app-side totals. Hardware remains the
    final authority for its own cumulative run limits.
-9. Manual Test uses a separate BLE operation. It has a safe per-tap duration
-   but no cumulative test limit and does not consume interpretation totals.
+9. Manual Test uses a separate BLE operation. It is not constrained by the
+   transcription maximum-per-event or interpretation totals. Each tap uses the
+   selected medium's minimum as its safe pulse size, and repeated taps remain
+   available without a cumulative limit.
 
 ## 5. Legacy-preserving pump and pin map
 

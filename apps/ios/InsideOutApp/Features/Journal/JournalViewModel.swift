@@ -310,6 +310,6 @@ final class JournalViewModel: ObservableObject {
     }
 
     func testChannel(_ kind: FigureKind) {
-        _ = balloonLink.testChannel(kind, amount: installationSettings.minimumChange)
+        _ = balloonLink.testChannel(kind, amount: installationSettings.minimumChange(for: kind))
     }
 }

@@ -5,7 +5,9 @@ import Combine
 final class InstallationSettings: ObservableObject {
     private enum Key {
         static let mode = "installation.mode"
-        static let minimum = "installation.minimumChange"
+        static let legacyMinimum = "installation.minimumChange"
+        static let airMinimum = "installation.airMinimumChange"
+        static let waterMinimum = "installation.waterMinimumChange"
         static let maximum = "installation.maximumChange"
         static let legacySessionMaximum = "installation.maximumSessionTotal"
         static let airInterpretationLimit = "installation.airInterpretationLimit"
@@ -18,7 +20,8 @@ final class InstallationSettings: ObservableObject {
     private let defaults: UserDefaults
 
     @Published var installationMode: Bool { didSet { defaults.set(installationMode, forKey: Key.mode) } }
-    @Published var minimumChange: Int { didSet { defaults.set(minimumChange, forKey: Key.minimum) } }
+    @Published var airMinimumChange: Int { didSet { defaults.set(airMinimumChange, forKey: Key.airMinimum) } }
+    @Published var waterMinimumChange: Int { didSet { defaults.set(waterMinimumChange, forKey: Key.waterMinimum) } }
     @Published var maximumChangePerEvent: Int { didSet { defaults.set(maximumChangePerEvent, forKey: Key.maximum) } }
     @Published var airInterpretationLimit: Int { didSet { defaults.set(airInterpretationLimit, forKey: Key.airInterpretationLimit) } }
     @Published var waterInterpretationLimit: Int { didSet { defaults.set(waterInterpretationLimit, forKey: Key.waterInterpretationLimit) } }
@@ -29,7 +32,9 @@ final class InstallationSettings: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         installationMode = defaults.object(forKey: Key.mode) as? Bool ?? false
-        minimumChange = defaults.object(forKey: Key.minimum) as? Int ?? 5
+        let legacyMinimum = defaults.object(forKey: Key.legacyMinimum) as? Int ?? 5
+        airMinimumChange = defaults.object(forKey: Key.airMinimum) as? Int ?? legacyMinimum
+        waterMinimumChange = defaults.object(forKey: Key.waterMinimum) as? Int ?? legacyMinimum
         maximumChangePerEvent = defaults.object(forKey: Key.maximum) as? Int ?? 25
         let legacyLimit = defaults.object(forKey: Key.legacySessionMaximum) as? Int ?? 100
         airInterpretationLimit = defaults.object(forKey: Key.airInterpretationLimit) as? Int ?? legacyLimit
@@ -43,7 +48,8 @@ final class InstallationSettings: ObservableObject {
     var snapshot: InstallationSettingsSnapshot {
         InstallationSettingsSnapshot(
             installationMode: installationMode,
-            minimumChange: minimumChange,
+            airMinimumChange: airMinimumChange,
+            waterMinimumChange: waterMinimumChange,
             maximumChangePerEvent: maximumChangePerEvent,
             airInterpretationLimit: airInterpretationLimit,
             waterInterpretationLimit: waterInterpretationLimit,
@@ -53,9 +59,14 @@ final class InstallationSettings: ObservableObject {
 
     var interpretationReady: Bool { DirectInterpretationConfiguration.current.isConfigured }
 
+    func minimumChange(for kind: FigureKind) -> Int {
+        kind.medium == .air ? airMinimumChange : waterMinimumChange
+    }
+
     func normalize() {
-        minimumChange = min(100, max(1, minimumChange))
-        maximumChangePerEvent = min(100, max(minimumChange, maximumChangePerEvent))
+        airMinimumChange = min(100, max(1, airMinimumChange))
+        waterMinimumChange = min(100, max(1, waterMinimumChange))
+        maximumChangePerEvent = min(100, max(max(airMinimumChange, waterMinimumChange), maximumChangePerEvent))
         // Board safety ceilings expressed in the same normalized units:
         // air 20,000 / 40 = 500; water 90,000 / 150 = 600.
         airInterpretationLimit = min(500, max(maximumChangePerEvent, airInterpretationLimit))
@@ -64,7 +75,8 @@ final class InstallationSettings: ObservableObject {
 
     func restoreDefaults() {
         installationMode = false
-        minimumChange = 5
+        airMinimumChange = 5
+        waterMinimumChange = 5
         maximumChangePerEvent = 25
         airInterpretationLimit = 100
         waterInterpretationLimit = 100

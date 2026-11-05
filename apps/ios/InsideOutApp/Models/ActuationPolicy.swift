@@ -2,7 +2,8 @@ import Foundation
 
 struct InstallationSettingsSnapshot: Equatable {
     var installationMode: Bool
-    var minimumChange: Int
+    var airMinimumChange: Int
+    var waterMinimumChange: Int
     var maximumChangePerEvent: Int
     var airInterpretationLimit: Int
     var waterInterpretationLimit: Int
@@ -10,6 +11,10 @@ struct InstallationSettingsSnapshot: Equatable {
 
     func interpretationLimit(for kind: FigureKind) -> Int {
         kind.medium == .air ? airInterpretationLimit : waterInterpretationLimit
+    }
+
+    func minimumChange(for kind: FigureKind) -> Int {
+        kind.medium == .air ? airMinimumChange : waterMinimumChange
     }
 }
 struct PumpDeltaCommand: Equatable, Identifiable {
@@ -51,12 +56,14 @@ struct ActuationPolicy {
         hardwareReady: Bool
     ) -> PumpDeltaCommand? {
         guard settings.installationMode, hardwareReady else { return nil }
-        let minimum = max(1, min(100, settings.minimumChange))
-        let maximum = max(minimum, min(100, settings.maximumChangePerEvent))
         let selected = settings.allowConcurrentPumps ? Array(feeds.prefix(4)) : Array(feeds.prefix(1))
 
         var deltas = Array(repeating: UInt8(0), count: FigureKind.allCases.count)
         for feed in selected where feed.feedAmount > 0 {
+            let minimum = max(1, min(100, settings.minimumChange(for: feed.figure)))
+            // This ceiling belongs only to interpreted event commands. Manual
+            // hardware tests use the separate `.test` BLE operation.
+            let maximum = max(minimum, min(100, settings.maximumChangePerEvent))
             let sessionMaximum = max(1, settings.interpretationLimit(for: feed.figure))
             let remaining = max(0, sessionMaximum - sessionTotals[feed.figure])
             guard remaining > 0 else { continue }

@@ -31,11 +31,12 @@ struct InstallationSettingsView: View {
                 }
 
                 Section("Interpreted fill · normalized units") {
-                    Stepper("Minimum change: \(settings.minimumChange)", value: minimumBinding, in: 1...100)
-                    Stepper("Maximum per event: \(settings.maximumChangePerEvent)", value: maximumBinding, in: 1...100)
+                    Stepper("Air minimum change: \(settings.airMinimumChange)", value: airMinimumBinding, in: 1...100)
+                    Stepper("Water minimum change: \(settings.waterMinimumChange)", value: waterMinimumBinding, in: 1...100)
+                    Stepper("Transcription maximum per event: \(settings.maximumChangePerEvent)", value: maximumBinding, in: 1...100)
                     Stepper("Air total limit: \(settings.airInterpretationLimit)", value: airLimitBinding, in: 1...500)
                     Stepper("Water total limit: \(settings.waterInterpretationLimit)", value: waterLimitBinding, in: 1...600)
-                    Text("These totals apply only to interpreted voice/message events. Manual Test pulses do not consume them.")
+                    Text("Minimums, maximum per event, and totals apply only to interpreted voice/message events. Air and water use separate minimums.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -67,7 +68,7 @@ struct InstallationSettingsView: View {
                     Button("Stop Current Pumps", role: .destructive, action: onStop)
                         .disabled(!link.state.isReady)
                     ForEach(FigureKind.allCases) { kind in
-                        Button("Test \(kind.displayName) · +\(settings.minimumChange)") {
+                        Button("Test \(kind.displayName) · +\(settings.minimumChange(for: kind))") {
                             onTestChannel(kind)
                         }
                         .disabled(!link.state.isReady)
@@ -75,7 +76,7 @@ struct InstallationSettingsView: View {
                     Text("Commands are enabled only while the link is ready. Missed commands are never queued for reconnect.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                    Text("Test pulses have no cumulative limit; each tap is still capped to one safe 1–100 pulse.")
+                    Text("Manual Test has no interpreted-event maximum and no cumulative total limit. Each tap uses that channel medium's minimum as its safe pulse size.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -136,9 +137,16 @@ struct InstallationSettingsView: View {
         }
     }
 
-    private var minimumBinding: Binding<Int> {
-        Binding(get: { settings.minimumChange }, set: {
-            settings.minimumChange = $0
+    private var airMinimumBinding: Binding<Int> {
+        Binding(get: { settings.airMinimumChange }, set: {
+            settings.airMinimumChange = $0
+            settings.normalize()
+        })
+    }
+
+    private var waterMinimumBinding: Binding<Int> {
+        Binding(get: { settings.waterMinimumChange }, set: {
+            settings.waterMinimumChange = $0
             settings.normalize()
         })
     }

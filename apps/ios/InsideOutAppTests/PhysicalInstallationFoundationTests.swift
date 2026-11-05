@@ -16,14 +16,15 @@ final class PhysicalInstallationFoundationTests: XCTestCase {
     func testActuationClampsMinimumMaximumAndSupportsFourChannels() {
         let settings = InstallationSettingsSnapshot(
             installationMode: true,
-            minimumChange: 5,
+            airMinimumChange: 5,
+            waterMinimumChange: 7,
             maximumChangePerEvent: 25,
             airInterpretationLimit: 100,
             waterInterpretationLimit: 100,
             allowConcurrentPumps: true
         )
         let feeds = [
-            feed(.anger, 1), feed(.joy, 12), feed(.anxiety, 30), feed(.sadness, 8)
+            feed(.anger, 1), feed(.joy, 1), feed(.anxiety, 30), feed(.sadness, 8)
         ]
 
         let command = ActuationPolicy().command(
@@ -33,13 +34,14 @@ final class PhysicalInstallationFoundationTests: XCTestCase {
             hardwareReady: true
         )
 
-        XCTAssertEqual(command?.deltas, [5, 12, 25, 8, 0, 0, 0, 0])
+        XCTAssertEqual(command?.deltas, [5, 7, 25, 8, 0, 0, 0, 0])
     }
 
     func testActuationUsesRemainingCapacityAndNeverQueuesWhenDisconnected() {
         let settings = InstallationSettingsSnapshot(
             installationMode: true,
-            minimumChange: 5,
+            airMinimumChange: 5,
+            waterMinimumChange: 5,
             maximumChangePerEvent: 25,
             airInterpretationLimit: 20,
             waterInterpretationLimit: 40,
@@ -61,7 +63,8 @@ final class PhysicalInstallationFoundationTests: XCTestCase {
     func testActuationUsesSeparateAirAndWaterInterpretationLimits() {
         let settings = InstallationSettingsSnapshot(
             installationMode: true,
-            minimumChange: 5,
+            airMinimumChange: 5,
+            waterMinimumChange: 5,
             maximumChangePerEvent: 25,
             airInterpretationLimit: 20,
             waterInterpretationLimit: 40,
@@ -83,7 +86,8 @@ final class PhysicalInstallationFoundationTests: XCTestCase {
     func testActuationHonorsSinglePumpAndZeroFeed() {
         let settings = InstallationSettingsSnapshot(
             installationMode: true,
-            minimumChange: 5,
+            airMinimumChange: 5,
+            waterMinimumChange: 5,
             maximumChangePerEvent: 25,
             airInterpretationLimit: 100,
             waterInterpretationLimit: 100,
@@ -199,14 +203,16 @@ final class PhysicalInstallationFoundationTests: XCTestCase {
         defaults.removePersistentDomain(forName: suite)
         let first = InstallationSettings(defaults: defaults)
         first.installationMode = true
-        first.minimumChange = 7
+        first.airMinimumChange = 7
+        first.waterMinimumChange = 9
         first.maximumChangePerEvent = 24
         first.airInterpretationLimit = 80
         first.waterInterpretationLimit = 120
 
         let restored = InstallationSettings(defaults: defaults)
         XCTAssertTrue(restored.installationMode)
-        XCTAssertEqual(restored.minimumChange, 7)
+        XCTAssertEqual(restored.airMinimumChange, 7)
+        XCTAssertEqual(restored.waterMinimumChange, 9)
         XCTAssertEqual(restored.maximumChangePerEvent, 24)
         XCTAssertEqual(restored.airInterpretationLimit, 80)
         XCTAssertEqual(restored.waterInterpretationLimit, 120)
@@ -356,7 +362,8 @@ final class PhysicalInstallationFoundationTests: XCTestCase {
         defaults.removePersistentDomain(forName: suite)
         let settings = InstallationSettings(defaults: defaults)
         settings.installationMode = true
-        settings.minimumChange = 5
+        settings.airMinimumChange = 6
+        settings.waterMinimumChange = 8
         settings.maximumChangePerEvent = 25
         settings.airInterpretationLimit = 100
         settings.waterInterpretationLimit = 100
@@ -378,9 +385,11 @@ final class PhysicalInstallationFoundationTests: XCTestCase {
         XCTAssertEqual(fill.deltas, [0, 12, 0, 0, 0, 0, 0, 0])
         XCTAssertEqual(viewModel.installationTotals[.joy], 12)
 
-        XCTAssertTrue(controller.testChannel(.joy, amount: 25))
+        // Manual tests bypass the interpreted-event maximum (25) and totals.
+        XCTAssertTrue(controller.testChannel(.joy, amount: 100))
         let test = try BalloonPacketCodec().decodeCommand(mock.writtenPackets[1])
         XCTAssertEqual(test.operation, .test)
+        XCTAssertEqual(test.deltas, [0, 100, 0, 0, 0, 0, 0, 0])
         XCTAssertEqual(viewModel.installationTotals[.joy], 12)
         defaults.removePersistentDomain(forName: suite)
     }
