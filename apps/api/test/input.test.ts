@@ -31,7 +31,7 @@ describe('keyword fallback', () => {
   it('matches the iOS interpreter on the demo story', () => {
     const result = interpretWithKeywords({ inputType: 'voice', text: DRIVER });
     // Zero-hit ties break alphabetically, same as Swift's rawValue sort.
-    expect(result.figures.map((f) => f.id)).toEqual(['anger', 'fear']);
+    expect(result.figures.map((f) => f.id)).toEqual(['anger', 'anxiety']);
     expect(validateInterpretation(result).ok).toBe(true);
   });
 
@@ -43,7 +43,7 @@ describe('keyword fallback', () => {
 
   it('understands Chinese keywords', () => {
     const result = interpretWithKeywords({ inputType: 'message', text: '今天被老板当众批评，很生气也有点担心' });
-    expect(result.figures.map((f) => f.id)).toEqual(['anger', 'fear']);
+    expect(result.figures.map((f) => f.id)).toEqual(['anger', 'anxiety']);
   });
 });
 
@@ -90,7 +90,7 @@ describe('InputInterpreter', () => {
   });
 
   it('retries once with the validation errors, then succeeds', async () => {
-    const bad = { ...modelOutput(), figures: [{ ...modelOutput().figures[0], id: 'disgust' }] };
+    const bad = { ...modelOutput(), figures: [{ ...modelOutput().figures[0], id: 'surprise' }] };
     const llm = new FakeLlm([bad, modelOutput()]);
     const result = await new InputInterpreter(llm).interpret({ inputType: 'voice', text: DRIVER });
     expect(result.fallback).toBe(false);

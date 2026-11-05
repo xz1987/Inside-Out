@@ -37,7 +37,19 @@ struct FigureState: Equatable {
                             headline: "Anger has been growing this week"),
         .fear: FigureState(kind: .fear, level: 2, exp: 30, energy: 0.46,
                            trend: [20, 22, 30, 28, 34, 38, 46],
-                           headline: "Fear is sticking close to Anger")
+                           headline: "Fear is watching for danger"),
+        .anxiety: FigureState(kind: .anxiety, level: 2, exp: 38, energy: 0.51,
+                              trend: [34, 42, 38, 55, 48, 46, 51],
+                              headline: "Anxiety has been circling possibilities"),
+        .disgust: FigureState(kind: .disgust, level: 2, exp: 22, energy: 0.35,
+                              trend: [28, 30, 25, 32, 34, 30, 35],
+                              headline: "Disgust is keeping its distance"),
+        .embarrassment: FigureState(kind: .embarrassment, level: 1, exp: 48, energy: 0.42,
+                                    trend: [25, 30, 28, 45, 36, 38, 42],
+                                    headline: "Embarrassment is hiding nearby"),
+        .boredom: FigureState(kind: .boredom, level: 2, exp: 18, energy: 0.28,
+                              trend: [32, 30, 26, 25, 30, 27, 28],
+                              headline: "Boredom is waiting for a spark")
     ]
 }
 
@@ -54,7 +66,11 @@ struct FigurePair: Hashable {
     static let seedScores: [FigurePair: Int] = [
         FigurePair(.anger, .fear): 12,
         FigurePair(.joy, .sadness): 9,
-        FigurePair(.joy, .anger): -4
+        FigurePair(.joy, .anger): -4,
+        FigurePair(.anxiety, .fear): 7,
+        FigurePair(.disgust, .anger): 3,
+        FigurePair(.embarrassment, .anxiety): 6,
+        FigurePair(.boredom, .sadness): 2
     ]
 }
 
@@ -85,7 +101,15 @@ struct MemoryEntry: Identifiable, Equatable {
             MemoryEntry(date: day(4), text: "Waiting for the exam results", figures: [.fear],
                         seedID: "memory_seed_fear_01", objectName: "A refreshed inbox"),
             MemoryEntry(date: day(5), text: "The group project nobody else finished", figures: [.anger],
-                        seedID: "memory_seed_anger_01", objectName: "A half-empty slide deck")
+                        seedID: "memory_seed_anger_01", objectName: "A half-empty slide deck"),
+            MemoryEntry(date: day(6), text: "Refreshing the inbox before results", figures: [.anxiety],
+                        seedID: "memory_seed_anxiety_01", objectName: "A glowing inbox"),
+            MemoryEntry(date: day(7), text: "The sour smell in the shared fridge", figures: [.disgust],
+                        seedID: "memory_seed_disgust_01", objectName: "A sealed container"),
+            MemoryEntry(date: day(8), text: "Forgetting a name during introductions", figures: [.embarrassment],
+                        seedID: "memory_seed_embarrassment_01", objectName: "A blank name tag"),
+            MemoryEntry(date: day(9), text: "Waiting through the delayed meeting", figures: [.boredom],
+                        seedID: "memory_seed_boredom_01", objectName: "A frozen clock")
         ]
     }
 }

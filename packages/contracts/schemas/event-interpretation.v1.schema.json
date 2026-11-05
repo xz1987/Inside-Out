@@ -15,7 +15,7 @@
     "figures": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 3,
+      "maxItems": 4,
       "description": "Fed Figures, most-fed first. Concentrations sum to 1 (±0.01).",
       "items": {
         "type": "object",
@@ -33,7 +33,7 @@
     },
     "relationshipCues": {
       "type": "array",
-      "maxItems": 3,
+      "maxItems": 6,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -56,6 +56,9 @@
     "uncertainties": { "type": "array", "items": { "type": "string", "maxLength": 200 }, "maxItems": 5 }
   },
   "$defs": {
-    "figureId": { "type": "string", "enum": ["joy", "sadness", "anger", "fear"] }
+    "figureId": {
+      "type": "string",
+      "enum": ["anger", "joy", "anxiety", "sadness", "disgust", "fear", "embarrassment", "boredom"]
+    }
   }
 }

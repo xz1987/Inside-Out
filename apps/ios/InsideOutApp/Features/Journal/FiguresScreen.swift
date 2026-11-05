@@ -1,12 +1,13 @@
 import SwiftUI
 
-/// "Your Figures" — the four Figures on their island with energy rings,
+/// "Your Figures" — all eight Figures on their island with energy rings,
 /// relationship threads, and a weekly trend card for the selected one.
 struct FiguresScreen: View {
     @ObservedObject var vm: JournalViewModel
 
     private static let spots: [FigureKind: (x: CGFloat, y: CGFloat, size: CGFloat)] = [
-        .joy: (112, 258, 96), .sadness: (286, 250, 74), .anger: (120, 430, 118), .fear: (285, 425, 90)
+        .anger: (55, 235, 72), .joy: (145, 225, 76), .anxiety: (245, 228, 72), .sadness: (335, 235, 70),
+        .disgust: (55, 410, 70), .fear: (145, 405, 72), .embarrassment: (245, 410, 68), .boredom: (335, 405, 68)
     ]
 
     var body: some View {
@@ -19,8 +20,8 @@ struct FiguresScreen: View {
                                      center: UnitPoint(x: 0.5, y: 0.4), startRadius: 0, endRadius: 210))
                 .overlay(Ellipse().stroke(.white.opacity(0.8), lineWidth: 1))
                 .shadow(color: Color(red: 140 / 255, green: 100 / 255, blue: 190 / 255, opacity: 0.15), radius: 30, y: 30)
-                .frame(width: 366, height: 430)
-                .offset(x: 12, y: 150)
+                .frame(width: 366, height: 390)
+                .offset(x: 12, y: 140)
 
             RelationshipThreads()
 
@@ -43,10 +44,10 @@ struct FiguresScreen: View {
             .font(.rounded(11, .heavy))
             .foregroundStyle(Ink.label)
             .frame(width: 390)
-            .offset(y: 548)
+            .offset(y: 518)
 
             TrendCard(state: vm.figures[vm.selectedFigure]!)
-                .offset(x: 20, y: 592)
+                .offset(x: 20, y: 566)
         }
         .appear()
     }
@@ -109,32 +110,26 @@ private struct RelationshipThreads: View {
     var body: some View {
         ZStack {
             let angerFear = Path { p in
-                p.move(to: .init(x: 120, y: 430)); p.addQuadCurve(to: .init(x: 285, y: 425), control: .init(x: 202, y: 480))
+                p.move(to: .init(x: 55, y: 235)); p.addQuadCurve(to: .init(x: 145, y: 405), control: .init(x: 62, y: 345))
             }
             let warm = LinearGradient(colors: [Color(hex: 0xFF8B78), Color(hex: 0xB99AF0)],
-                                      startPoint: UnitPoint(x: 120 / 390, y: 0), endPoint: UnitPoint(x: 285 / 390, y: 0))
-            angerFear.stroke(warm, style: StrokeStyle(lineWidth: 16, lineCap: .round)).opacity(0.2)
-            angerFear.stroke(warm, style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                                      startPoint: UnitPoint(x: 55 / 390, y: 0), endPoint: UnitPoint(x: 145 / 390, y: 0))
+            angerFear.stroke(warm, style: StrokeStyle(lineWidth: 10, lineCap: .round)).opacity(0.16)
+            angerFear.stroke(warm, style: StrokeStyle(lineWidth: 4, lineCap: .round))
 
             Path { p in
-                p.move(to: .init(x: 112, y: 258)); p.addQuadCurve(to: .init(x: 286, y: 250), control: .init(x: 199, y: 214))
+                p.move(to: .init(x: 145, y: 225)); p.addQuadCurve(to: .init(x: 335, y: 235), control: .init(x: 240, y: 185))
             }
             .stroke(LinearGradient(colors: [Color(hex: 0xFFD84D), Color(hex: 0x94A9F3)],
-                                   startPoint: UnitPoint(x: 112 / 390, y: 0), endPoint: UnitPoint(x: 286 / 390, y: 0)),
+                                   startPoint: UnitPoint(x: 145 / 390, y: 0), endPoint: UnitPoint(x: 335 / 390, y: 0)),
                     style: StrokeStyle(lineWidth: 4, lineCap: .round))
             .opacity(0.8)
 
             Path { p in
-                p.move(to: .init(x: 112, y: 258)); p.addQuadCurve(to: .init(x: 120, y: 430), control: .init(x: 62, y: 344))
+                p.move(to: .init(x: 245, y: 228)); p.addQuadCurve(to: .init(x: 245, y: 410), control: .init(x: 290, y: 320))
             }
             .stroke(Color(hex: 0xFF9A88), style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: [3, 9]))
             .opacity(0.9)
-
-            Path { p in
-                p.move(to: .init(x: 286, y: 250)); p.addQuadCurve(to: .init(x: 285, y: 425), control: .init(x: 336, y: 338))
-            }
-            .stroke(Color(hex: 0xA9B6F5), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-            .opacity(0.8)
         }
         .frame(width: 390, height: 844)
         .allowsHitTesting(false)

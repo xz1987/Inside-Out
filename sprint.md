@@ -77,9 +77,54 @@
 - [x] 真机 API 链路：Debug xcconfig 可指向每位开发者的 Mac / HTTPS tunnel，iOS 包含局域网声明，后端监听 `0.0.0.0`，key 仅留在后端 `.env`
 - [ ] CI 与双人 GitHub 协作流程（PRD §44、§48）
 
+## Physical Installation Integration
+
+- [x] 冻结八情绪、四气四水、原 pin 叠加、Direct Interpretation、fill-only delta 与安装运行边界；保存在 `docs/physical-installation-core-spec.md`
+- [ ] 按 `docs/physical-installation-task-sets.md` 分组实现 Set 1–8；每组完成后在该文件记录 commit、验证证据，并同步本页进度日志
+- [x] 将用户提供的四通道 Arduino 代码作为只读基线保存在 `hardware/arduino/reference/emotion_pumps_4ch_1.ino`
+
 ---
 
 ## 进度日志
+
+### 2026-11-04（Joy/Boredom 映射、自动充气与测试/解读上限分离）
+- Joy 与 Boredom 完整交换实体映射：Joy 改为 D4 水泵，Boredom 改为 D9 气泵；固定 App/BLE 八通道顺序不变，由 Arduino adapter 映射到 `[A,Z,C,W,X,Y,D,B]`。
+- 修复语音/文字完成解读后只显示结果、不发送硬件命令的问题：成功生成 `EventAnalysis` 后立即经 `ActuationPolicy` 发送一次 fill，成功入队后才累计 interpretation totals，断线仍不补发。
+- Installation Settings 将单一 session maximum 拆成 Air interpretation total 与 Water interpretation total；旧设置值自动迁移为两者初始值。
+- 新增 BLE `test (0x03)` 操作与 Arduino 独立 test queue：手动 Test 每次仍受单包安全时长限制，但不累计、不受 interpreted-fill `MAX_TOTAL` 阻挡，也不消耗 App interpretation totals。
+- 验证：Arduino UNO R4 WiFi 编译通过（88,772 bytes flash / 9,732 bytes RAM）；unsigned generic iOS build 与 XCTest target build 均通过。当前 Simulator service 不可用、UNO R4 未连接，因此 XCTest execution 与新版固件上传留待设备恢复后执行。
+
+### 2026-10-31（八通道 Arduino + BLE Set 6）
+- 保留原四路 A/D3、W/D5、B/D9、X/D10，新增 C/D6、Y/D2、D/D11、Z/D4；气泵使用 PWM 200/255，水泵使用 digital full on/off，并继承原介质的 timing/queue/total 初始值。
+- 新增 `hardware/arduino/emotion_pumps_8ch_ble/`，采用 non-blocking loop 让任意八路并行；每 tick 按 queue 与剩余 `MAX_TOTAL` clamp，STOP、BLE disconnect 与 RESET 都立即关闭输出并清队列。
+- ArduinoBLE peripheral 与 iOS Set 5 完全对齐：三个 UUID、13-byte command、6-byte status、big-endian sequence、XOR checksum、ACK/reject/stopped notification。
+- 对 iPhone 同 sequence retry 做 connection-scoped 去重：重发 ACK 但不重复加泵时间；connect/disconnect 清除缓存，避免 App 重启从 sequence 1 开始时碰撞旧会话。
+- 保留并扩展 Serial bench commands：TA/TW/TB/TX/TC/TY/TD/TZ、多通道组合、STOP、RESET、STATUS；完整实体 bench matrix 写入 hardware README。
+- 安装并验证 Arduino CLI 1.5.1、UNO R4 core 1.6.0、ArduinoBLE 2.1.0；FQBN `arduino:renesas_uno:unor4wifi` 编译通过，flash 88,620 bytes (33%)、RAM 9,692 bytes (29%)。
+- 当前 Mac 未连接 UNO R4，因此没有上传、实体泵动作或 BLE scanner 通过记录；这些硬件验收明确留到接板后的 Set 7，不把 compile 冒充 bench test。
+
+### 2026-10-31（实体装置 BLE 基础 Set 5）
+- 新增独立于 CoreBluetooth 的 `BalloonLinkProtocol`、connection state、command/status/error types；Figure、memory、relationship 与 interpretation domain 不依赖 BLE。
+- 新增 `CoreBluetoothBalloonLink`：按 service UUID 扫描、只连接一台 peripheral、发现 command/status characteristics、订阅 status notification、使用 write-with-response；App 进入后台或关闭 Installation Mode 时主动断开。
+- 新增 `MockBalloonLink` 与 Settings 内的 Acknowledge / Timeout / Reject / Disconnect 场景，可在 Simulator 验证完整状态而无需硬件。
+- 新增 `BalloonLinkController`：protocol version、递增 sequence ID、matching ACK、2 秒 timeout、最多一次 retry；disconnect/failure 后丢弃 pending command，reconnect 不重放。
+- Settings 中启用 BLE 状态、Connect/Disconnect、Stop Current Pumps 和八个最小变化量 channel tests；只有 `ready` 时可发送。
+- 新增 `docs/ble-protocol-v1.md`，冻结 provisional UUID、13-byte command、6-byte status、XOR checksum 和 Set 6 对接规则。
+- 验证：generic physical iOS Debug build passed；iPhone 17 / iOS 27 Simulator XCTest 19/19 passed，覆盖 codec、错误 checksum、ACK sequence、retry、fault、disconnect/no-replay、Stop/test packets。
+
+### 2026-10-30（实体装置软件基础 Set 0–4）
+- Set 1：Swift、TypeScript 与共享 JSON Schema 统一为固定八情绪顺序；单次解释支持 1–4 个 Figure，并为参与者生成 0/1/3/6 条两两关系。
+- Set 2：新增 iPhone Direct Interpretation client，通过 gitignored `Local.xcconfig` 注入专用 key；严格结构化输出、错误不泄露 transcript/key，且 installation path 不调用 Ecosystem API。真实 key 的真机额度调用留给项目 owner。
+- Set 3：新增本地持久化 Installation Settings 与纯函数 `ActuationPolicy`，默认 min/max/session cap 为 5/25/100，支持最多四路并发、断线丢弃和八通道独立累计。
+- Set 4：完成八个毛线纤维风格 Figure、八 Figure 首页/总览、1–4 Figure 结果布局、最多六段关系、设置页、accessibility labels 与 Reduce Motion；保存标准和 Accessibility XXXL 模拟器截图。
+- 新增 `InsideOutAppTests` target：10/10 XCTest 通过；后端 84/84 Vitest、TypeScript typecheck、generic simulator Debug build 与 XCTest build 均通过。
+- 尚未进入 Set 5–6：没有实现 CoreBluetooth transport，也没有改写 Arduino 为八通道；这些继续以保存的四通道基线和冻结 pin map 为准。
+
+### 2026-10-29（实体装置软件规划 Set 0）
+- 新增 `docs/physical-installation-core-spec.md`：记录八种 Figure、固定 App channel 顺序、四气四水介质、1–4 种情绪输出、Direct Interpretation-only、App 本地 ecosystem、BLE-ready 才立即触发，以及默认 min/max/session cap 5/25/100。
+- 冻结 legacy-preserving pin map：保留 A/D3、W/D5、B/D9、X/D10，叠加 C/D6、Y/D2、D/D11、Z/D4；App 情绪顺序与实体泵顺序由 adapter 显式映射。
+- 新增 `docs/physical-installation-task-sets.md`，把后续工作拆成 Set 1–8，并为每组预留 acceptance criteria、commit 与测试证据。
+- 将用户提供的 `emotion_pumps_4ch_1.ino` 保存为仓库内只读参考基线；当前只完成记录与规划，尚未实现八通道、BLE 或 Direct iOS client。
 
 ### 2026-09-29（实体 iPhone 调用后端 AI）
 - 修复真机上 `localhost` 指向手机自身导致后端不可达的问题：`APIClient` 可从 App 构建配置读取 `API_BASE_URL`。

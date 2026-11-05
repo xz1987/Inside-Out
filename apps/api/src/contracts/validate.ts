@@ -82,7 +82,7 @@ function interpretationRules(value: EventInterpretationV1): string[] {
 
 function snapshotRules(value: EcosystemSnapshotV1): string[] {
   const ids = new Set(value.figures.map((f) => f.id));
-  return ids.size === 4 ? [] : ['/figures must contain each Figure exactly once'];
+  return ids.size === 8 ? [] : ['/figures must contain each of the eight Figures exactly once'];
 }
 
 function resolutionRules(value: EcosystemResolutionV1): string[] {

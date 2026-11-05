@@ -4,6 +4,7 @@ import SwiftUI
 /// using its 390×844 artboard coordinates via `DesignCanvas`.
 struct JournalView: View {
     @StateObject private var vm = JournalViewModel()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ZStack {
@@ -18,6 +19,17 @@ struct JournalView: View {
                     if vm.showsTabs {
                         TabBar(vm: vm)
                             .offset(x: 24, y: 752)
+                        Button { vm.showsInstallationSettings = true } label: {
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(Ink.primary)
+                                .frame(width: 38, height: 38)
+                                .background(Circle().fill(.white.opacity(0.72)))
+                                .overlay(Circle().stroke(.white.opacity(0.9), lineWidth: 1))
+                        }
+                        .buttonStyle(PressableStyle())
+                        .offset(x: 336, y: 58)
+                        .accessibilityLabel("Installation Settings")
                     }
                     if let toast = vm.toast {
                         ToastView(text: toast)
@@ -33,6 +45,22 @@ struct JournalView: View {
         .sheet(isPresented: $vm.isTyping) {
             TypeSheet(vm: vm)
         }
+        .sheet(isPresented: $vm.showsInstallationSettings) {
+            InstallationSettingsView(
+                settings: vm.installationSettings,
+                totals: vm.installationTotals,
+                link: vm.balloonLink,
+                onNewSession: vm.startNewInstallationSession,
+                onConnectionSettingsChanged: vm.refreshHardwareConnection,
+                onMockHardwareChanged: vm.setMockHardware,
+                onConnect: vm.connectHardware,
+                onDisconnect: vm.disconnectHardware,
+                onStop: vm.stopCurrentPumps,
+                onTestChannel: vm.testChannel
+            )
+        }
+        .onAppear { vm.handleScenePhase(scenePhase) }
+        .onChange(of: scenePhase) { _, phase in vm.handleScenePhase(phase) }
     }
 
     @ViewBuilder
@@ -54,7 +82,7 @@ struct JournalView: View {
     }
 }
 
-// MARK: - Stage: the four Figures and the mic
+// MARK: - Stage: the eight Figures and the mic
 
 private struct StageSlot {
     var x: CGFloat
@@ -109,7 +137,8 @@ private struct StageView: View {
             return resultSlot(for: kind)
         default:
             let home: [FigureKind: (CGFloat, CGFloat, CGFloat)] = [
-                .joy: (80, 290, 88), .anger: (315, 285, 80), .sadness: (72, 540, 76), .fear: (318, 548, 78)
+                .anger: (54, 280, 68), .joy: (145, 242, 72), .anxiety: (245, 242, 68), .sadness: (336, 286, 66),
+                .disgust: (50, 548, 66), .fear: (140, 600, 68), .embarrassment: (250, 600, 64), .boredom: (340, 548, 64)
             ]
             let (x, y, size) = home[kind]!
             return looking(StageSlot(x: x, y: y, size: size), at: mic)
@@ -119,10 +148,14 @@ private struct StageView: View {
     /// Figures swell toward the mic as they hear words that concern them.
     private func listeningSlot(for kind: FigureKind, mic: CGPoint, levels: [FigureKind: Int]) -> StageSlot {
         let steps: [FigureKind: [(CGFloat, CGFloat, CGFloat)]] = [
-            .anger: [(322, 400, 64), (305, 410, 92), (296, 405, 112)],
-            .fear: [(330, 650, 60), (302, 628, 86), (292, 618, 102)],
-            .joy: [(66, 410, 62), (85, 410, 92), (94, 405, 112)],
-            .sadness: [(64, 628, 58), (88, 628, 86), (98, 618, 102)]
+            .anger: [(42, 378, 52), (68, 394, 72), (88, 410, 88)],
+            .joy: [(120, 300, 52), (132, 342, 72), (142, 382, 88)],
+            .anxiety: [(270, 300, 52), (258, 342, 72), (248, 382, 88)],
+            .sadness: [(348, 378, 52), (322, 394, 72), (302, 410, 88)],
+            .disgust: [(40, 662, 50), (72, 628, 70), (100, 602, 84)],
+            .fear: [(126, 700, 50), (144, 650, 70), (158, 612, 84)],
+            .embarrassment: [(264, 700, 50), (246, 650, 70), (232, 612, 84)],
+            .boredom: [(350, 662, 50), (318, 628, 70), (290, 602, 84)]
         ]
         let level = levels[kind, default: 0]
         let anyEngaged = levels.values.contains { $0 > 0 }
@@ -138,7 +171,7 @@ private struct StageView: View {
     /// Fed Figures stand where `ResultLayout` puts them; the rest wait,
     /// dimmed, at the edges.
     private func resultSlot(for kind: FigureKind) -> StageSlot {
-        let fed = Array((vm.analysis?.feeds.map(\.figure) ?? []).prefix(3))
+        let fed = Array((vm.analysis?.feeds.map(\.figure) ?? []).prefix(4))
         if let index = fed.firstIndex(of: kind) {
             let slot = ResultLayout.slots(count: fed.count)[index]
             return StageSlot(x: slot.x, y: slot.y, size: slot.size, mood: .fed, glow: slot.glow, lookX: slot.lookX, lookY: 0.2)

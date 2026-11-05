@@ -4,6 +4,14 @@
 <dict>
 	<key>API_BASE_URL</key>
 	<string>$(API_BASE_URL)</string>
+	<key>INTERPRETATION_MODE</key>
+	<string>$(INTERPRETATION_MODE)</string>
+	<key>INTERPRETATION_BASE_URL</key>
+	<string>$(INTERPRETATION_BASE_URL)</string>
+	<key>INTERPRETATION_MODEL</key>
+	<string>$(INTERPRETATION_MODEL)</string>
+	<key>INTERPRETATION_API_KEY</key>
+	<string>$(INTERPRETATION_API_KEY)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -29,6 +37,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Connect to the Inside Out installation and control its emotion pumps while the app is open.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Connect to the Inside Out development server running on your Mac.</string>
 	<key>NSMicrophoneUsageDescription</key>

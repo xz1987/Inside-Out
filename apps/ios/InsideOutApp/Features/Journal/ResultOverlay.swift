@@ -10,7 +10,7 @@ struct ResultOverlay: View {
     @State private var replaying = false
     @State private var showingOriginal = false
 
-    private var feeds: [FigureFeed] { Array(analysis.feeds.prefix(3)) }
+    private var feeds: [FigureFeed] { Array(analysis.feeds.prefix(4)) }
     private var slots: [ResultLayout.Slot] { ResultLayout.slots(count: feeds.count) }
     private var bonds: [RelationshipPromotion] { analysis.promotedRelationships }
 
@@ -52,7 +52,8 @@ struct ResultOverlay: View {
             Sparkles()
 
             BondList(bonds: bonds)
-                .frame(width: 390, height: 120, alignment: .bottom)
+                .frame(width: 366, height: 128, alignment: .bottom)
+                .offset(x: 12)
                 .offset(y: 530)
                 .appear(delay: 1.5)
 
@@ -369,17 +370,19 @@ private struct OriginalInputSheet: View {
     }
 }
 
-/// "X & Y grew closer  before → after", one row per promoted bond (0–3),
+/// "X & Y grew closer  before → after", one row per promoted bond (0–6),
 /// stacked upward from just above the Save button.
 private struct BondList: View {
     let bonds: [RelationshipPromotion]
 
     var body: some View {
-        VStack(spacing: 6) {
+        LazyVGrid(columns: bonds.count > 3 ? [GridItem(.flexible()), GridItem(.flexible())] : [GridItem(.flexible())], spacing: 5) {
             ForEach(bonds, id: \.pair) { bond in
-                HStack(spacing: 8) {
+                HStack(spacing: 5) {
                     Text("♥").foregroundStyle(Ink.heart)
-                    Text("\(bond.firstFigure.displayName) & \(bond.secondFigure.displayName) grew closer")
+                    Text("\(bond.firstFigure.displayName) & \(bond.secondFigure.displayName)")
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     if let before = bond.before, let after = bond.after {
                         Text("\(before) → \(after)")
                             .monospacedDigit()
@@ -390,10 +393,10 @@ private struct BondList: View {
                             .foregroundStyle(Ink.primary)
                     }
                 }
-                .font(.rounded(13, .heavy))
+                .font(.rounded(bonds.count > 3 ? 10 : 13, .heavy))
                 .foregroundStyle(Ink.secondary)
-                .padding(.vertical, 7)
-                .padding(.horizontal, 14)
+                .padding(.vertical, bonds.count > 3 ? 5 : 7)
+                .padding(.horizontal, bonds.count > 3 ? 7 : 14)
                 .background(Capsule().fill(.white.opacity(0.55)))
                 .accessibilityElement(children: .combine)
             }
@@ -416,8 +419,7 @@ enum ResultLayout {
         let columnWidth: CGFloat
     }
 
-    /// Most-fed first. One: centred. Two: side by side. Three: most-fed in the
-    /// middle, the others either side, with narrower columns.
+    /// Most-fed first. Four uses four compact columns across the artboard.
     static func slots(count: Int) -> [Slot] {
         switch count {
         case 1:
@@ -427,19 +429,28 @@ enum ResultLayout {
                 Slot(x: 102, y: 305, size: 124, numberTop: 190, numberSize: 34, glow: 0.95, lookX: 0.8, columnTop: 380, columnWidth: 170),
                 Slot(x: 288, y: 305, size: 100, numberTop: 206, numberSize: 28, glow: 0.6, lookX: -0.8, columnTop: 380, columnWidth: 170)
             ]
-        default:
+        case 3:
             return [
                 Slot(x: 195, y: 298, size: 108, numberTop: 186, numberSize: 32, glow: 0.95, lookX: 0, columnTop: 370, columnWidth: 122),
                 Slot(x: 68, y: 314, size: 86, numberTop: 214, numberSize: 26, glow: 0.7, lookX: 0.6, columnTop: 370, columnWidth: 122),
                 Slot(x: 322, y: 318, size: 78, numberTop: 224, numberSize: 24, glow: 0.6, lookX: -0.6, columnTop: 370, columnWidth: 122)
+            ]
+        default:
+            return [
+                Slot(x: 52, y: 300, size: 74, numberTop: 205, numberSize: 24, glow: 0.9, lookX: 0.7, columnTop: 356, columnWidth: 92),
+                Slot(x: 147, y: 306, size: 68, numberTop: 215, numberSize: 22, glow: 0.75, lookX: 0.3, columnTop: 356, columnWidth: 92),
+                Slot(x: 243, y: 306, size: 66, numberTop: 217, numberSize: 22, glow: 0.65, lookX: -0.3, columnTop: 356, columnWidth: 92),
+                Slot(x: 338, y: 310, size: 62, numberTop: 224, numberSize: 20, glow: 0.55, lookX: -0.7, columnTop: 356, columnWidth: 92)
             ]
         }
     }
 
     /// Resting spots for the Figures that sat this event out.
     static func edges(count: Int) -> [(x: CGFloat, y: CGFloat, look: Double)] {
-        count >= 3
-            ? [(378, 232, -1)]
-            : [(14, 250, 1), (378, 250, -1), (14, 372, 1), (378, 372, -1)]
+        let all: [(x: CGFloat, y: CGFloat, look: Double)] = [
+            (12, 220, 1), (378, 220, -1), (10, 315, 1), (380, 315, -1),
+            (12, 420, 1), (378, 420, -1), (22, 500, 1), (368, 500, -1)
+        ]
+        return Array(all.prefix(max(1, FigureKind.allCases.count - count)))
     }
 }

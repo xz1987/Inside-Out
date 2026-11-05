@@ -6,6 +6,7 @@ import {
   validateSessionResponse,
   validateSnapshot,
 } from '../src/contracts/validate.js';
+import { FIGURE_IDS } from '../src/contracts/types.js';
 
 const clone = <T>(value: T): T => structuredClone(value);
 const interpretation = loadFixture<any>('event-interpretation.valid.json');
@@ -26,9 +27,28 @@ describe('fixtures are valid', () => {
 });
 
 describe('EventInterpretationV1 rules', () => {
+  it('freezes all eight Figure ids in app channel order', () => {
+    expect(FIGURE_IDS).toEqual([
+      'anger', 'joy', 'anxiety', 'sadness', 'disgust', 'fear', 'embarrassment', 'boredom',
+    ]);
+  });
+
+  it('accepts four unique Figures and rejects a fifth', () => {
+    const four = clone(interpretation);
+    four.figures = [
+      { ...four.figures[0], id: 'anger', concentration: 0.25 },
+      { ...four.figures[1], id: 'joy', concentration: 0.25 },
+      { ...four.figures[0], id: 'anxiety', concentration: 0.25 },
+      { ...four.figures[1], id: 'sadness', concentration: 0.25 },
+    ];
+    expect(validateInterpretation(four).ok).toBe(true);
+    four.figures.push({ ...four.figures[0], id: 'fear', concentration: 0 });
+    expect(validateInterpretation(four).ok).toBe(false);
+  });
+
   it('rejects unknown Figure ids', () => {
     const bad = clone(interpretation);
-    bad.figures[0].id = 'disgust';
+    bad.figures[0].id = 'surprise';
     expect(validateInterpretation(bad).ok).toBe(false);
   });
 
@@ -72,6 +92,25 @@ describe('EventInterpretationV1 rules', () => {
 });
 
 describe('EcosystemResolutionV1 rules', () => {
+  it('permits up to six relationship pairs and rejects a seventh', () => {
+    const six = clone(resolution);
+    const figures = ['anger', 'joy', 'anxiety', 'sadness'];
+    six.promotedRelationships = [];
+    for (let i = 0; i < figures.length; i++) {
+      for (let j = i + 1; j < figures.length; j++) {
+        six.promotedRelationships.push({
+          figures: [figures[i], figures[j]], before: 0, delta: 4, after: 4,
+          reason: 'They shared the event.',
+        });
+      }
+    }
+    expect(validateResolution(six).ok).toBe(true);
+    six.promotedRelationships.push({
+      figures: ['fear', 'boredom'], before: 0, delta: 4, after: 4, reason: 'Extra pair.',
+    });
+    expect(validateResolution(six).ok).toBe(false);
+  });
+
   it('rejects attacker === victim', () => {
     const bad = clone(resolution);
     bad.raid.victimFigureId = 'anger';
@@ -136,9 +175,9 @@ describe('ClientSessionResponseV1 rules', () => {
 });
 
 describe('EcosystemSnapshotV1 rules', () => {
-  it('requires all four Figures exactly once', () => {
+  it('requires all eight Figures exactly once', () => {
     const bad = clone(snapshot);
-    bad.figures[3].id = 'joy';
+    bad.figures[7].id = 'joy';
     expect(validateSnapshot(bad).ok).toBe(false);
   });
 });

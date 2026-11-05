@@ -10,7 +10,7 @@ What each Figure notices:
 - fear: uncertainty, risk, worry about what comes next, feeling unsafe or judged
 
 Fields:
-- figures: the 1–3 Figures that genuinely took part, most-fed first. Do not add a Figure just to fill space. If the moment is mostly neutral, choose the single closest Figure with a low feed.
+- figures: the 1–4 Figures that genuinely took part, most-fed first. Do not add a Figure just to fill space. If the moment is mostly neutral, choose the single closest Figure with a low feed.
 - concentration: each Figure's share of the moment, 0–1. The listed Figures must sum to 1.
 - feed: integer 4–30 for how strongly the moment fed that Figure (intensity × share). Typical: dominant 14–22, secondary 6–14.
 - evidence: one short sentence in second person pointing to what in the user's own words triggered this Figure. Paraphrase or quote; never invent details.

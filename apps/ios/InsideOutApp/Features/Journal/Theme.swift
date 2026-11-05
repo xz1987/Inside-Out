@@ -26,22 +26,38 @@ struct FigurePalette {
 extension FigureKind {
     var palette: FigurePalette {
         switch self {
+        case .anger:
+            FigurePalette(light: Color(hex: 0xFFD1CC), base: Color(hex: 0xFF4C3E), dark: Color(hex: 0xC9272D),
+                          glow: Color(hex: 0xFF4D5B), barStart: Color(hex: 0xFF9A8E),
+                          badgeBackground: Color(hex: 0xFFE0DC), badgeText: Color(hex: 0xA32228))
         case .joy:
             FigurePalette(light: Color(hex: 0xFFF6C2), base: Color(hex: 0xFFD84D), dark: Color(hex: 0xF2A81D),
                           glow: Color(red: 1, green: 196 / 255, blue: 60 / 255), barStart: Color(hex: 0xFFE38A),
                           badgeBackground: Color(hex: 0xFFF0C4), badgeText: Color(hex: 0xB27A0A))
+        case .anxiety:
+            FigurePalette(light: Color(hex: 0xFFE3BD), base: Color(hex: 0xFF8A32), dark: Color(hex: 0xD85B16),
+                          glow: Color(hex: 0xFF7A24), barStart: Color(hex: 0xFFB86E),
+                          badgeBackground: Color(hex: 0xFFE4CB), badgeText: Color(hex: 0xA94510))
         case .sadness:
-            FigurePalette(light: Color(hex: 0xE4EAFF), base: Color(hex: 0x94A9F3), dark: Color(hex: 0x5F76D4),
-                          glow: Color(red: 120 / 255, green: 145 / 255, blue: 240 / 255), barStart: Color(hex: 0xC3CFFA),
-                          badgeBackground: Color(hex: 0xE2E8FF), badgeText: Color(hex: 0x4B61C2))
-        case .anger:
-            FigurePalette(light: Color(hex: 0xFFD6CC), base: Color(hex: 0xFF8B78), dark: Color(hex: 0xE4574A),
-                          glow: Color(red: 1, green: 115 / 255, blue: 95 / 255), barStart: Color(hex: 0xFFB3A4),
-                          badgeBackground: Color(hex: 0xFFE0D9), badgeText: Color(hex: 0xC9463A))
+            FigurePalette(light: Color(hex: 0xDCE9FF), base: Color(hex: 0x4285F4), dark: Color(hex: 0x245BB6),
+                          glow: Color(hex: 0x3E83FF), barStart: Color(hex: 0x8EB9FF),
+                          badgeBackground: Color(hex: 0xDDEAFF), badgeText: Color(hex: 0x2455A5))
+        case .disgust:
+            FigurePalette(light: Color(hex: 0xDDF7D4), base: Color(hex: 0x65C35A), dark: Color(hex: 0x2E8A3A),
+                          glow: Color(hex: 0x6AD65C), barStart: Color(hex: 0xA7E79E),
+                          badgeBackground: Color(hex: 0xDEF3D8), badgeText: Color(hex: 0x246E31))
         case .fear:
-            FigurePalette(light: Color(hex: 0xF1E6FF), base: Color(hex: 0xBC9DF2), dark: Color(hex: 0x8A66D6),
-                          glow: Color(red: 170 / 255, green: 130 / 255, blue: 240 / 255), barStart: Color(hex: 0xDCC8FB),
-                          badgeBackground: Color(hex: 0xEEE4FF), badgeText: Color(hex: 0x7452C4))
+            FigurePalette(light: Color(hex: 0xEEE2FF), base: Color(hex: 0xA273E8), dark: Color(hex: 0x6841B4),
+                          glow: Color(hex: 0xA97CF3), barStart: Color(hex: 0xCDB3F4),
+                          badgeBackground: Color(hex: 0xEDE3FC), badgeText: Color(hex: 0x5F3AA9))
+        case .embarrassment:
+            FigurePalette(light: Color(hex: 0xFFE0F0), base: Color(hex: 0xF58BC1), dark: Color(hex: 0xC9508F),
+                          glow: Color(hex: 0xFF8FCB), barStart: Color(hex: 0xF7B5D7),
+                          badgeBackground: Color(hex: 0xFCE1EF), badgeText: Color(hex: 0xA93B77))
+        case .boredom:
+            FigurePalette(light: Color(hex: 0xFFFFFF), base: Color(hex: 0xE8EDF3), dark: Color(hex: 0x66758A),
+                          glow: Color(hex: 0xB9D2F0), barStart: Color(hex: 0xD9E5F3),
+                          badgeBackground: Color(hex: 0xEEF3F8), badgeText: Color(hex: 0x536274))
         }
     }
 }

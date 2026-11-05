@@ -12,25 +12,40 @@ const KEYWORDS: Record<FigureId, string[]> = {
     '生气', '愤怒', '不公平', '打断', '被忽视', '烦', '吼', '别车',
   ],
   fear: [
-    'afraid', 'fear', 'worried', 'nervous', 'uncertain', 'anxious', 'scared', 'shaky', 'happen again',
-    '害怕', '担心', '紧张', '不确定', '焦虑', '后怕', '发抖',
+    'afraid', 'fear', 'scared', 'unsafe', 'danger', 'threat', 'panic', 'shaky',
+    '害怕', '恐惧', '危险', '不安全', '惊吓', '发抖',
+  ],
+  anxiety: [
+    'anxious', 'anxiety', 'worried', 'nervous', 'uncertain', 'overthinking', 'happen again',
+    '焦虑', '担心', '紧张', '不确定', '想太多', '后怕',
   ],
   sadness: ['sad', 'hurt', 'lost', 'lonely', 'cry', 'miss', '难过', '受伤', '失落', '孤独', '哭', '想念'],
   joy: ['happy', 'joy', 'excited', 'proud', 'great', 'celebrate', '开心', '高兴', '兴奋', '自豪', '庆祝', '很好'],
+  disgust: ['disgust', 'disgusted', 'gross', 'nasty', 'repulsed', 'sickening', '恶心', '反感', '嫌弃', '膈应'],
+  embarrassment: ['embarrassed', 'awkward', 'humiliated', 'ashamed', 'cringe', 'self-conscious', '尴尬', '丢脸', '羞耻', '难为情'],
+  boredom: ['bored', 'boring', 'dull', 'tedious', 'nothing to do', 'waiting forever', '无聊', '没意思', '乏味', '等太久'],
 };
 
 const EVIDENCE: Record<FigureId, string> = {
   anger: 'Anger noticed a boundary, interruption, or sense of unfairness.',
   fear: 'Fear noticed uncertainty, risk, or concern about what happens next.',
+  anxiety: 'Anxiety noticed anticipation, uncertainty, or a thought that kept looping.',
   sadness: 'Sadness noticed hurt, distance, or something that felt lost.',
   joy: 'Joy noticed connection, relief, progress, or something worth keeping.',
+  disgust: 'Disgust noticed aversion, rejection, or something that crossed a visceral boundary.',
+  embarrassment: 'Embarrassment noticed exposure, awkwardness, or a wish to disappear.',
+  boredom: 'Boredom noticed repetition, waiting, or a lack of meaningful stimulation.',
 };
 
 const VOICE_LINES: Record<FigureId, string> = {
   anger: 'That crossed a line. It wasn’t fair.',
   fear: 'I’m worried it’ll happen again.',
+  anxiety: 'My mind keeps circling what might happen next.',
   sadness: 'That one hurt. I’ll hold onto it.',
   joy: 'There’s something good here to keep.',
+  disgust: 'I want some distance from that.',
+  embarrassment: 'I wish I could hide for a minute.',
+  boredom: 'Nothing here is holding my attention.',
 };
 
 // Order used to break ties, matching Swift's rawValue sort.

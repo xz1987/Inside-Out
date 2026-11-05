@@ -1,7 +1,17 @@
 // Hand-written mirrors of packages/contracts/schemas/*.json.
 // If you change a schema, change the matching type here and the fixtures.
 
-export const FIGURE_IDS = ['joy', 'sadness', 'anger', 'fear'] as const;
+/** Stable app/BLE channel order. Do not reorder without a protocol migration. */
+export const FIGURE_IDS = [
+  'anger',
+  'joy',
+  'anxiety',
+  'sadness',
+  'disgust',
+  'fear',
+  'embarrassment',
+  'boredom',
+] as const;
 export type FigureId = (typeof FIGURE_IDS)[number];
 
 export interface FedFigure {

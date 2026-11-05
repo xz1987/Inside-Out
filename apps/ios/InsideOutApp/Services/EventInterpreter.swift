@@ -27,9 +27,12 @@ struct LocalEventInterpreter: EventInterpreting {
             "生气", "愤怒", "不公平", "打断", "被忽视", "烦", "吼", "别车"
         ],
         .fear: [
-            "afraid", "fear", "worried", "nervous", "uncertain", "anxious",
-            "scared", "shaky", "happen again",
-            "害怕", "担心", "紧张", "不确定", "焦虑", "后怕", "发抖"
+            "afraid", "fear", "scared", "unsafe", "danger", "threat", "panic", "shaky",
+            "害怕", "恐惧", "危险", "不安全", "惊吓", "发抖"
+        ],
+        .anxiety: [
+            "anxious", "anxiety", "worried", "nervous", "uncertain", "overthinking", "happen again",
+            "焦虑", "担心", "紧张", "不确定", "想太多", "后怕"
         ],
         .sadness: [
             "sad", "hurt", "lost", "lonely", "cry", "miss",
@@ -38,7 +41,10 @@ struct LocalEventInterpreter: EventInterpreting {
         .joy: [
             "happy", "joy", "excited", "proud", "great", "celebrate",
             "开心", "高兴", "兴奋", "自豪", "庆祝", "很好"
-        ]
+        ],
+        .disgust: ["disgust", "disgusted", "gross", "nasty", "repulsed", "恶心", "反感", "嫌弃", "膈应"],
+        .embarrassment: ["embarrassed", "awkward", "humiliated", "ashamed", "cringe", "尴尬", "丢脸", "羞耻", "难为情"],
+        .boredom: ["bored", "boring", "dull", "tedious", "nothing to do", "无聊", "没意思", "乏味", "等太久"]
     ]
 
     /// Number of keyword hits per Figure. Also drives the live Figure
@@ -119,11 +125,19 @@ struct LocalEventInterpreter: EventInterpreting {
         case .anger:
             "That crossed a line. It wasn’t fair."
         case .fear:
-            "I’m worried it’ll happen again."
+            "That felt dangerous. I want us somewhere safe."
+        case .anxiety:
+            "My mind keeps circling what might happen next."
         case .sadness:
             "That one hurt. I’ll hold onto it."
         case .joy:
             "There’s something good here to keep."
+        case .disgust:
+            "I want some distance from that."
+        case .embarrassment:
+            "I wish I could hide for a minute."
+        case .boredom:
+            "Nothing here is holding my attention."
         }
     }
 
@@ -132,11 +146,19 @@ struct LocalEventInterpreter: EventInterpreting {
         case .anger:
             "Anger noticed a boundary, interruption, or sense of unfairness."
         case .fear:
-            "Fear noticed uncertainty, risk, or concern about what happens next."
+            "Fear noticed immediate danger, shock, or a need to escape."
+        case .anxiety:
+            "Anxiety noticed anticipation, uncertainty, or a thought that kept looping."
         case .sadness:
             "Sadness noticed hurt, distance, or something that felt lost."
         case .joy:
             "Joy noticed connection, relief, progress, or something worth keeping."
+        case .disgust:
+            "Disgust noticed aversion, rejection, or a visceral boundary."
+        case .embarrassment:
+            "Embarrassment noticed exposure, awkwardness, or a wish to disappear."
+        case .boredom:
+            "Boredom noticed repetition, waiting, or too little stimulation."
         }
     }
 }

@@ -4,7 +4,11 @@
     { "id": "joy", "level": 5, "exp": 64, "energy": 58 },
     { "id": "sadness", "level": 2, "exp": 40, "energy": 32 },
     { "id": "anger", "level": 3, "exp": 52, "energy": 70 },
-    { "id": "fear", "level": 2, "exp": 30, "energy": 46 }
+    { "id": "fear", "level": 2, "exp": 30, "energy": 46 },
+    { "id": "anxiety", "level": 2, "exp": 38, "energy": 51 },
+    { "id": "disgust", "level": 2, "exp": 22, "energy": 35 },
+    { "id": "embarrassment", "level": 1, "exp": 48, "energy": 42 },
+    { "id": "boredom", "level": 2, "exp": 18, "energy": 28 }
   ],
   "relationships": [
     { "figures": ["anger", "fear"], "score": 12 },
@@ -15,6 +19,10 @@
     { "id": "memory_seed_joy_01", "title": "Mia brought you coffee without asking", "ownerFigureId": "joy", "state": "visible", "objectId": "object_seed_joy_01", "objectName": "A warm paper cup" },
     { "id": "memory_seed_sadness_01", "title": "Missed grandma’s call, again", "ownerFigureId": "sadness", "state": "visible", "objectId": "object_seed_sadness_01", "objectName": "A missed-call notification" },
     { "id": "memory_seed_fear_01", "title": "Waiting for the exam results", "ownerFigureId": "fear", "state": "visible", "objectId": null, "objectName": null },
-    { "id": "memory_seed_anger_01", "title": "The group project nobody else finished", "ownerFigureId": "anger", "state": "visible", "objectId": "object_seed_anger_01", "objectName": "A half-empty slide deck" }
+    { "id": "memory_seed_anger_01", "title": "The group project nobody else finished", "ownerFigureId": "anger", "state": "visible", "objectId": "object_seed_anger_01", "objectName": "A half-empty slide deck" },
+    { "id": "memory_seed_anxiety_01", "title": "Refreshing the inbox before results", "ownerFigureId": "anxiety", "state": "visible", "objectId": "object_seed_anxiety_01", "objectName": "A glowing inbox" },
+    { "id": "memory_seed_disgust_01", "title": "The sour smell in the shared fridge", "ownerFigureId": "disgust", "state": "visible", "objectId": "object_seed_disgust_01", "objectName": "A sealed container" },
+    { "id": "memory_seed_embarrassment_01", "title": "Forgetting a name during introductions", "ownerFigureId": "embarrassment", "state": "visible", "objectId": "object_seed_embarrassment_01", "objectName": "A blank name tag" },
+    { "id": "memory_seed_boredom_01", "title": "Waiting through the delayed meeting", "ownerFigureId": "boredom", "state": "visible", "objectId": "object_seed_boredom_01", "objectName": "A frozen clock" }
   ]
 }

@@ -10,8 +10,8 @@
     "schemaVersion": { "type": "string", "const": "ecosystem-snapshot.v1" },
     "figures": {
       "type": "array",
-      "minItems": 4,
-      "maxItems": 4,
+      "minItems": 8,
+      "maxItems": 8,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -54,6 +54,9 @@
     }
   },
   "$defs": {
-    "figureId": { "type": "string", "enum": ["joy", "sadness", "anger", "fear"] }
+    "figureId": {
+      "type": "string",
+      "enum": ["anger", "joy", "anxiety", "sadness", "disgust", "fear", "embarrassment", "boredom"]
+    }
   }
 }

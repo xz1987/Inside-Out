@@ -33,6 +33,11 @@ final class JournalViewModel: ObservableObject {
     /// Exactly what was sent for the current result (transcript or typed text).
     @Published private(set) var lastInputText = ""
     @Published private(set) var isFinalizingVoice = false
+    @Published var showsInstallationSettings = false
+    @Published private(set) var installationTotals = InstallationSessionTotals()
+
+    let installationSettings: InstallationSettings
+    let balloonLink: BalloonLinkController
 
     private let interpreter: EventInterpreting
     let voiceRecorder: SpeechRecordingService
@@ -41,11 +46,17 @@ final class JournalViewModel: ObservableObject {
     private var pendingTask: Task<Void, Never>?
     /// Bumped on every navigation so late results from an abandoned request are dropped.
     private var navigation = 0
+    private var appIsActive = true
 
-    init(interpreter: EventInterpreting = RemoteEventInterpreter(),
-         voiceRecorder: SpeechRecordingService? = nil) {
+    init(interpreter: EventInterpreting = InterpreterFactory.make(),
+         voiceRecorder: SpeechRecordingService? = nil,
+         installationSettings: InstallationSettings? = nil,
+         balloonLink: BalloonLinkController? = nil) {
+        let resolvedSettings = installationSettings ?? InstallationSettings()
         self.interpreter = interpreter
         self.voiceRecorder = voiceRecorder ?? SpeechRecordingService()
+        self.installationSettings = resolvedSettings
+        self.balloonLink = balloonLink ?? BalloonLinkController(mock: resolvedSettings.mockHardware)
     }
 
     // MARK: - Derived state
@@ -181,6 +192,7 @@ final class JournalViewModel: ObservableObject {
             capturedAt = Date()
             baseline = figures
             isSaved = false
+            actuateAnalysisIfPossible(result)
             if mode == .typed { typedText = "" }
             go(.result)
         } catch {
@@ -240,5 +252,64 @@ final class JournalViewModel: ObservableObject {
 
     func tellAnother() {
         go(.home)
+    }
+
+    func startNewInstallationSession() {
+        installationTotals.reset()
+    }
+
+    /// Sends one already-interpreted event to hardware exactly once. Manual
+    /// channel tests use a separate board operation and never touch these
+    /// interpretation totals.
+    @discardableResult
+    func actuateAnalysisIfPossible(_ analysis: EventAnalysis) -> Bool {
+        guard let command = ActuationPolicy().command(
+            feeds: analysis.feeds,
+            settings: installationSettings.snapshot,
+            sessionTotals: installationTotals,
+            hardwareReady: balloonLink.isReady
+        ) else { return false }
+        guard balloonLink.send(deltas: command.deltas) else { return false }
+        installationTotals.apply(command)
+        return true
+    }
+
+    // MARK: - Installation hardware
+
+    func handleScenePhase(_ phase: ScenePhase) {
+        appIsActive = phase == .active
+        refreshHardwareConnection()
+    }
+
+    func refreshHardwareConnection() {
+        guard appIsActive, installationSettings.installationMode else {
+            balloonLink.disconnect()
+            return
+        }
+        if installationSettings.autoConnect {
+            balloonLink.connect()
+        }
+    }
+
+    func connectHardware() {
+        guard appIsActive, installationSettings.installationMode else { return }
+        balloonLink.connect()
+    }
+
+    func disconnectHardware() {
+        balloonLink.disconnect()
+    }
+
+    func setMockHardware(_ enabled: Bool) {
+        balloonLink.replaceLink(BalloonLinkFactory.make(mock: enabled))
+        refreshHardwareConnection()
+    }
+
+    func stopCurrentPumps() {
+        _ = balloonLink.stopCurrentPumps()
+    }
+
+    func testChannel(_ kind: FigureKind) {
+        _ = balloonLink.testChannel(kind, amount: installationSettings.minimumChange)
     }
 }
