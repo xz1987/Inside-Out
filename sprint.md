@@ -240,3 +240,12 @@
 ### 2026-09-24（PRD 修订说明）
 - 为所有与实现不一致的 PRD 条款加上 “修订（2026-09-24）” 说明，原文保留（取消的需求用删除线）：§29 信息架构（底部 tab）、§30 语音优先输入页、§30 取消 15 字下限、§31 C 关系规则（已有）、§31 D + MVP-UI-08 + MVP-FR-04 取消手动调整、§38.2/§38.3 Cornell 网关与环境变量、§39.1 + §40.2 uploads + §42.1 手机端转写与实际流程、§40.2 实际请求/响应格式与错误码、§41 contract 以代码为准及新增字段。
 - PRD 开头新增 “修订记录” 总表，方便另一位开发者一次看到全部改动。
+
+### 2026-11-10（装置：充气量加大、预充气按钮、气泵轮流运行）
+- 问题：真机联调时充气/充水量太小看不出来；一句话识别出 Anger + Embarrassment 时只有 Anger 的气球充起来，单独 Test 两个泵都能转。原因是两个气泵同时启动，电源带不动第二个。
+- iOS：`ActuationPolicy` 新增 Strength（feed 倍数，默认 ×3，设置页可调 ×1–×5）；默认值改为气/水最小变化 25/10、单次上限 80、累计上限 500/600（= 板子硬上限）。设置项换用 `.v2` 存储键，让旧版本保存的小数值不再覆盖新默认值。
+- iOS：Installation Settings 新增「Pre-fill air」区：一键给 4 个气球各充一定量（默认 50），水不动；按正常 fill 指令发送，计入 session 累计。
+- Arduino：`emotion_pumps_8ch_ble.ino` 新增 `AIR_ONE_AT_A_TIME`，同一时间只运行一个气泵，按 A → B → C → D 依次轮流；水泵仍同时运行。
+- 修复：`FigureView.swift` 的 `fiberTufts` Canvas 在 Xcode 26.3 下报「unable to type-check this expression in reasonable time」，把每根纤维的计算拆到 `tuftPath(index:center:)`。
+- 测试：新增 Strength 和 Pre-fill 测试，单元测试共 23 个。`testMockTimeoutRetriesExactlyOnceThenFaults` 用 10 ms 超时 + 60 ms 等待，时序太紧，本机单独运行 3 次失败 2 次（与本次改动无关，未修改）。
+- 验证：草图用 arduino-cli 编译并烧录 UNO R4 WiFi；真机上 Pre-fill 4 个气泵依次运行，Anger + Embarrassment 两个气球都能充起来；Direct Interpretation 通过 Cornell 网关返回 `anger=12, embarrassment=10`。

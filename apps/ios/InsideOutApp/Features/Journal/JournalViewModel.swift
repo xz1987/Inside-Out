@@ -309,6 +309,26 @@ final class JournalViewModel: ObservableObject {
         _ = balloonLink.stopCurrentPumps()
     }
 
+    /// Gives every air balloon a starting fill so a new participant sees motion
+    /// sooner. Water is left alone. It is a normal fill command, so it counts
+    /// toward the session totals and the board's cumulative safety cap.
+    @discardableResult
+    func prefillAir() -> Bool {
+        guard installationSettings.installationMode, balloonLink.isReady else { return false }
+        let amount = max(1, min(100, installationSettings.airPrefillAmount))
+        let settings = installationSettings.snapshot
+        var deltas = Array(repeating: UInt8(0), count: FigureKind.allCases.count)
+        for kind in FigureKind.allCases where kind.medium == .air {
+            let remaining = max(0, settings.interpretationLimit(for: kind) - installationTotals[kind])
+            deltas[kind.channelIndex] = UInt8(clamping: min(amount, remaining))
+        }
+        guard deltas.contains(where: { $0 > 0 }) else { return false }
+        let command = PumpDeltaCommand(deltas: deltas)
+        guard balloonLink.send(deltas: command.deltas) else { return false }
+        installationTotals.apply(command)
+        return true
+    }
+
     func testChannel(_ kind: FigureKind) {
         _ = balloonLink.testChannel(kind, amount: installationSettings.minimumChange(for: kind))
     }

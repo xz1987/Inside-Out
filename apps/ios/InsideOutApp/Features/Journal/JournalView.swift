@@ -56,6 +56,7 @@ struct JournalView: View {
                 onConnect: vm.connectHardware,
                 onDisconnect: vm.disconnectHardware,
                 onStop: vm.stopCurrentPumps,
+                onPrefillAir: { vm.prefillAir() },
                 onTestChannel: vm.testChannel
             )
         }

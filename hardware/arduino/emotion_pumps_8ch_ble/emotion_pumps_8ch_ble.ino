@@ -38,6 +38,12 @@ bool outputActive[NUM_PUMPS] = {false};
 bool outputUsesTestQueue[NUM_PUMPS] = {false};
 unsigned long lastTick = 0;
 
+// Air pumps run one at a time: two starting together sagged the supply and the
+// second balloon barely filled. Queued air channels wait their turn; water
+// pumps are unaffected. Set to false to restore simultaneous air pumps.
+const bool AIR_ONE_AT_A_TIME = true;
+int8_t activeAir = -1;  // physical index of the air pump allowed to run, or -1
+
 // BLE protocol v1 — must match docs/ble-protocol-v1.md and iOS codec.
 const char* SERVICE_UUID = "FEE7D000-6A7A-4F3D-9E31-1A51D8E10000";
 const char* COMMAND_UUID = "FEE7D001-6A7A-4F3D-9E31-1A51D8E10000";
@@ -83,6 +89,7 @@ void queueTestNormalizedValue(uint8_t physicalIndex, uint8_t value);
 void readSerial();
 void handleSerialLine(char* line);
 void runPumps();
+bool wantsToRun(uint8_t i);
 void printStatus();
 void handleBLECommand(BLEDevice central, BLECharacteristic characteristic);
 void handleBLEConnect(BLEDevice central);
@@ -203,16 +210,31 @@ void runPumps() {
         Serial.println(F(" reached limit"));
       }
     }
-    // Test pulses take priority and remain available even after interpreted
-    // fills reach their cumulative cap. They do not change totalMs.
-    if (testQueueMs[i] > 0) {
-      outputUsesTestQueue[i] = true;
-      setPumpOutput(i, true);
-    } else {
-      outputUsesTestQueue[i] = false;
-      setPumpOutput(i, queueMs[i] > 0 && totalMs[i] < MAX_TOTAL[i]);
+  }
+
+  // Pick which air pump may run. The current one keeps running until its
+  // queue (or test pulse) is used up; then the next waiting air pump starts.
+  if (AIR_ONE_AT_A_TIME) {
+    if (activeAir >= 0 && !wantsToRun(activeAir)) activeAir = -1;
+    if (activeAir < 0) {
+      for (uint8_t i = 0; i < NUM_PUMPS; i++) {
+        if (IS_AIR[i] && wantsToRun(i)) { activeAir = i; break; }
+      }
     }
   }
+
+  for (uint8_t i = 0; i < NUM_PUMPS; i++) {
+    bool on = wantsToRun(i);
+    if (AIR_ONE_AT_A_TIME && IS_AIR[i] && i != activeAir) on = false;
+    // Test pulses take priority and remain available even after interpreted
+    // fills reach their cumulative cap. They do not change totalMs.
+    outputUsesTestQueue[i] = on && testQueueMs[i] > 0;
+    setPumpOutput(i, on);
+  }
+}
+
+bool wantsToRun(uint8_t i) {
+  return testQueueMs[i] > 0 || (queueMs[i] > 0 && totalMs[i] < MAX_TOTAL[i]);
 }
 
 void handleBLEConnect(BLEDevice central) {

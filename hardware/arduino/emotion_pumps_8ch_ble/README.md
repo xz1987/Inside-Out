@@ -54,7 +54,9 @@ App order is explicitly adapted to physical order:
 Use 9600 baud with newline:
 
 - `TA`, `TW`, `TB`, `TX`, `TC`, `TY`, `TD`, `TZ`: queue one channel for up to two seconds.
-- `A20,W10,B20,X10,C20,Y10,D20,Z10`: queue any combination concurrently.
+- `A20,W10,B20,X10,C20,Y10,D20,Z10`: queue any combination. Water pumps run
+  concurrently; air pumps (A, B, C, D) run one at a time in that order while
+  `AIR_ONE_AT_A_TIME` is true.
 - `STOP`: immediately turn every output off and clear all queues.
 - `RESET`: STOP plus reset cumulative limits.
 - `STATUS`: print all queue and cumulative times.
@@ -78,7 +80,7 @@ required physical acceptance matrix, not claimed pass results.
 | Y / Fear / D2 | `TY` | Only appended water pump Y switches fully on | Pending board |
 | D / Embarrassment / D11 | `TD` | Only appended air pump D runs with PWM | Pending board |
 | Z / Joy / D4 | `TZ` | Only appended water pump Z switches fully on | Pending board |
-| All eight | `A5,W5,B5,X5,C5,Y5,D5,Z5` | Eight queues begin concurrently | Pending board |
+| All eight | `A5,W5,B5,X5,C5,Y5,D5,Z5` | Four water queues begin together; air A → B → C → D one after another | Verified 2026-11-10 (app pre-fill) |
 | Safety | `STOP` during the prior command | All outputs turn off and queues become zero | Pending board |
 | BLE safety | Disconnect iPhone while pumps run | All outputs turn off and queues become zero | Pending board |
 

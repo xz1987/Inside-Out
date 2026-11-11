@@ -10,6 +10,7 @@ struct InstallationSettingsView: View {
     let onConnect: () -> Void
     let onDisconnect: () -> Void
     let onStop: () -> Void
+    let onPrefillAir: () -> Void
     let onTestChannel: (FigureKind) -> Void
     @Environment(\.dismiss) private var dismiss
 
@@ -30,7 +31,18 @@ struct InstallationSettingsView: View {
                     .disabled(!settings.installationMode)
                 }
 
+                Section("Pre-fill air") {
+                    Stepper("Amount per air balloon: \(settings.airPrefillAmount)",
+                            value: $settings.airPrefillAmount, in: 5...100, step: 5)
+                    Button("Pre-fill all air balloons · +\(settings.airPrefillAmount)", action: onPrefillAir)
+                        .disabled(!link.state.isReady || !settings.installationMode)
+                    Text("Runs the 4 air pumps one after another (about \(String(format: "%.1f", Double(settings.airPrefillAmount) * 0.04)) s each, \(String(format: "%.1f", Double(settings.airPrefillAmount) * 0.16)) s in total). Water is not touched. Counts toward Session totals; tap again for more.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("Interpreted fill · normalized units") {
+                    Stepper("Strength ×\(settings.feedGain, specifier: "%.1f")", value: $settings.feedGain, in: 1...5, step: 0.5)
                     Stepper("Air minimum change: \(settings.airMinimumChange)", value: airMinimumBinding, in: 1...100)
                     Stepper("Water minimum change: \(settings.waterMinimumChange)", value: waterMinimumBinding, in: 1...100)
                     Stepper("Transcription maximum per event: \(settings.maximumChangePerEvent)", value: maximumBinding, in: 1...100)

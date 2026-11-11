@@ -102,25 +102,32 @@ struct FigureView: View {
         Canvas { context, size in
             let center = CGPoint(x: size.width / 2, y: size.height / 2)
             for index in 0..<34 {
-                let angle = Double(index) / 34 * Double.pi * 2
-                let radius = 47.0
-                let length = 4.0 + Double((index * 7) % 9)
-                let start = CGPoint(x: center.x + cos(angle) * radius,
-                                    y: center.y + sin(angle) * radius)
-                let end = CGPoint(x: center.x + cos(angle) * (radius + length),
-                                  y: center.y + sin(angle) * (radius + length))
-                let bend = CGPoint(x: (start.x + end.x) / 2 + CGFloat(sin(angle * 3)) * 3,
-                                   y: (start.y + end.y) / 2 + CGFloat(cos(angle * 2)) * 3)
-                var path = Path()
-                path.move(to: start)
-                path.addQuadCurve(to: end, control: bend)
-                context.stroke(path, with: .color(index.isMultiple(of: 3) ? palette.light : palette.base),
+                let path: Path = Self.tuftPath(index: index, center: center)
+                let color: Color = index.isMultiple(of: 3) ? palette.light : palette.base
+                context.stroke(path, with: .color(color),
                                style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
             }
         }
         .frame(width: 112, height: 112)
         .offset(x: -6, y: -6)
         .accessibilityHidden(true)
+    }
+
+    /// Split out of the Canvas closure so the type checker finishes in time.
+    private static func tuftPath(index: Int, center: CGPoint) -> Path {
+        let angle: Double = Double(index) / 34.0 * Double.pi * 2.0
+        let radius: Double = 47.0
+        let length: Double = 4.0 + Double((index * 7) % 9)
+        let cx: Double = Double(center.x)
+        let cy: Double = Double(center.y)
+        let start = CGPoint(x: cx + cos(angle) * radius, y: cy + sin(angle) * radius)
+        let end = CGPoint(x: cx + cos(angle) * (radius + length), y: cy + sin(angle) * (radius + length))
+        let bendX: Double = (Double(start.x) + Double(end.x)) / 2.0 + sin(angle * 3.0) * 3.0
+        let bendY: Double = (Double(start.y) + Double(end.y)) / 2.0 + cos(angle * 2.0) * 3.0
+        var path = Path()
+        path.move(to: start)
+        path.addQuadCurve(to: end, control: CGPoint(x: bendX, y: bendY))
+        return path
     }
 
     private var fiberSurface: some View {

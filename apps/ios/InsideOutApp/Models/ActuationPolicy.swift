@@ -8,6 +8,9 @@ struct InstallationSettingsSnapshot: Equatable {
     var airInterpretationLimit: Int
     var waterInterpretationLimit: Int
     var allowConcurrentPumps: Bool
+    /// Multiplies the interpreted Feed before clamping, so the same emotion
+    /// moves the balloons more. 1 keeps Feed as-is.
+    var feedGain: Double = 1
 
     func interpretationLimit(for kind: FigureKind) -> Int {
         kind.medium == .air ? airInterpretationLimit : waterInterpretationLimit
@@ -67,7 +70,8 @@ struct ActuationPolicy {
             let sessionMaximum = max(1, settings.interpretationLimit(for: feed.figure))
             let remaining = max(0, sessionMaximum - sessionTotals[feed.figure])
             guard remaining > 0 else { continue }
-            let clamped = min(remaining, min(maximum, max(minimum, feed.feedAmount)))
+            let scaled = Int((Double(feed.feedAmount) * max(0.1, settings.feedGain)).rounded())
+            let clamped = min(remaining, min(maximum, max(minimum, scaled)))
             deltas[feed.figure.channelIndex] = UInt8(clamping: clamped)
         }
         return deltas.contains(where: { $0 > 0 }) ? PumpDeltaCommand(deltas: deltas) : nil

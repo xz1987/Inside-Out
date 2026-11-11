@@ -72,21 +72,30 @@ Default normalized settings:
 
 | Setting | Default | Meaning |
 |---|---:|---|
-| Air minimum change | 5 | Smallest non-zero transcription delta for an air Figure |
-| Water minimum change | 5 | Smallest non-zero transcription delta for a water Figure |
-| Maximum change per event | 25 | Largest transcription delta sent to one channel for one event |
-| Air interpretation total | 100 | App-side cumulative cap for each air channel; configurable to 500 |
-| Water interpretation total | 100 | App-side cumulative cap for each water channel; configurable to 600 |
+| Strength (feed gain) | ×3 | Feed is multiplied by this before clamping; configurable ×1–×5 |
+| Air minimum change | 25 | Smallest non-zero transcription delta for an air Figure (≈1 s); also the Test pulse |
+| Water minimum change | 10 | Smallest non-zero transcription delta for a water Figure (≈1.5 s); also the Test pulse |
+| Maximum change per event | 80 | Largest transcription delta sent to one channel for one event |
+| Air interpretation total | 500 | App-side cumulative cap for each air channel (= board cap, 20 s) |
+| Water interpretation total | 600 | App-side cumulative cap for each water channel (= board cap, 90 s) |
+| Air pre-fill | 50 | One "Pre-fill all air balloons" tap: every air channel, water untouched |
+
+Revised 2026-11-10: the original defaults (minimum 5, maximum 25, totals 100)
+produced fills too small to see on the physical balloons.
 
 Rules:
 
-1. Convert each valid Figure Feed into a normalized `0...100` delta.
+1. Convert each valid Figure Feed into a normalized `0...100` delta
+   (Feed × Strength, rounded).
 2. A participating Figure is clamped to its medium's air/water minimum and the
    transcription per-event maximum.
 3. Clamp again against that channel's remaining air/water interpretation
    capacity.
 4. Send all eight channel values in one command; zero means no change.
-5. Multiple non-zero channels may run concurrently.
+5. Multiple non-zero channels may be sent in one command. On the board, water
+   pumps run concurrently but air pumps run one at a time in channel order
+   (`AIR_ONE_AT_A_TIME`): two air pumps starting together sagged the supply and
+   the second balloon barely filled.
 6. Send only while Installation Mode is active and BLE state is `ready`.
 7. If hardware is disconnected, update the app ecosystem but do not queue,
    replay, or send the missed physical command after reconnection.
@@ -159,9 +168,10 @@ Provide an Installation Settings screen with:
 - Installation Mode on/off.
 - BLE availability and connection state.
 - Connected peripheral name.
-- Minimum Change, default 5.
-- Maximum Change Per Event, default 25.
-- Maximum Session Total, default 100.
+- Strength ×3, Air/Water Minimum Change 25/10, Maximum Change Per Event 80,
+  Air/Water Total 500/600 (revised 2026-11-10, see §5).
+- Pre-fill all air balloons, default 50 per air channel. It is a normal fill
+  command, so it counts toward session totals and the board's cumulative cap.
 - Allow Concurrent Pumps, default on.
 - Auto Connect while the app is foreground, default on.
 - Read-only per-emotion session totals.

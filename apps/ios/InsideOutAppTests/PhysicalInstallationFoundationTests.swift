@@ -196,6 +196,30 @@ final class PhysicalInstallationFoundationTests: XCTestCase {
         }
     }
 
+    func testFeedGainScalesInterpretedDeltaWithinPerEventMaximum() {
+        var settings = InstallationSettingsSnapshot(
+            installationMode: true,
+            airMinimumChange: 5,
+            waterMinimumChange: 5,
+            maximumChangePerEvent: 80,
+            airInterpretationLimit: 500,
+            waterInterpretationLimit: 600,
+            allowConcurrentPumps: true,
+            feedGain: 3
+        )
+        let command = ActuationPolicy().command(
+            feeds: [feed(.anger, 20), feed(.joy, 30)], settings: settings,
+            sessionTotals: InstallationSessionTotals(), hardwareReady: true)
+        XCTAssertEqual(command?[.anger], 60)
+        XCTAssertEqual(command?[.joy], 80)   // 90 clamped to the per-event maximum
+
+        settings.feedGain = 1
+        let unscaled = ActuationPolicy().command(
+            feeds: [feed(.anger, 20)], settings: settings,
+            sessionTotals: InstallationSessionTotals(), hardwareReady: true)
+        XCTAssertEqual(unscaled?[.anger], 20)
+    }
+
     @MainActor
     func testInstallationSettingsPersistAndRestoreDefaults() {
         let suite = "InsideOutAppTests.InstallationSettings"
@@ -365,6 +389,7 @@ final class PhysicalInstallationFoundationTests: XCTestCase {
         settings.airMinimumChange = 6
         settings.waterMinimumChange = 8
         settings.maximumChangePerEvent = 25
+        settings.feedGain = 1
         settings.airInterpretationLimit = 100
         settings.waterInterpretationLimit = 100
 
@@ -391,6 +416,35 @@ final class PhysicalInstallationFoundationTests: XCTestCase {
         XCTAssertEqual(test.operation, .test)
         XCTAssertEqual(test.deltas, [0, 100, 0, 0, 0, 0, 0, 0])
         XCTAssertEqual(viewModel.installationTotals[.joy], 12)
+        defaults.removePersistentDomain(forName: suite)
+    }
+
+    @MainActor
+    func testPrefillAirFillsOnlyAirChannelsAndCountsTowardTotals() throws {
+        let suite = "InsideOutAppTests.PrefillAir"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let settings = InstallationSettings(defaults: defaults)
+        settings.installationMode = true
+        settings.airPrefillAmount = 50
+        settings.airInterpretationLimit = 500
+
+        let mock = MockBalloonLink(scenario: .acknowledge)
+        let controller = BalloonLinkController(link: mock)
+        controller.connect()
+        let viewModel = JournalViewModel(installationSettings: settings, balloonLink: controller)
+
+        XCTAssertTrue(viewModel.prefillAir())
+        let command = try BalloonPacketCodec().decodeCommand(mock.writtenPackets[0])
+        XCTAssertEqual(command.operation, .fill)
+        // [anger, joy, anxiety, sadness, disgust, fear, embarrassment, boredom]
+        XCTAssertEqual(command.deltas, [50, 0, 50, 0, 0, 0, 50, 50])
+        XCTAssertEqual(viewModel.installationTotals[.anger], 50)
+        XCTAssertEqual(viewModel.installationTotals[.joy], 0)
+
+        settings.installationMode = false
+        XCTAssertFalse(viewModel.prefillAir())
+        XCTAssertEqual(mock.writtenPackets.count, 1)
         defaults.removePersistentDomain(forName: suite)
     }
 
