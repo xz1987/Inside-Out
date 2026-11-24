@@ -36,7 +36,7 @@ struct InstallationSettingsView: View {
                             value: $settings.airPrefillAmount, in: 5...100, step: 5)
                     Button("Pre-fill all air balloons · +\(settings.airPrefillAmount)", action: onPrefillAir)
                         .disabled(!link.state.isReady || !settings.installationMode)
-                    Text("Runs the 4 air pumps one after another (about \(String(format: "%.1f", Double(settings.airPrefillAmount) * 0.04)) s each, \(String(format: "%.1f", Double(settings.airPrefillAmount) * 0.16)) s in total). Water is not touched. Counts toward Session totals; tap again for more.")
+                    Text("Runs the 4 air pumps one after another (about \(String(format: "%.1f", Double(settings.airPrefillAmount) * 0.08)) s each, \(String(format: "%.1f", Double(settings.airPrefillAmount) * 0.32)) s in total). Water is not touched. Counts toward Session totals; tap again for more.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

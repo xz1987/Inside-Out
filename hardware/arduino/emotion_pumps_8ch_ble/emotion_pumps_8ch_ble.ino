@@ -19,9 +19,9 @@ const bool IS_AIR[NUM_PUMPS] = {true, false, true, false, true, false, true, fal
 
 // New pumps inherit settings from the existing pump of the same medium.
 const uint8_t DUTY[NUM_PUMPS] = {200, 255, 200, 255, 200, 255, 200, 255};
-const unsigned long MS_PER_UNIT[NUM_PUMPS] = {40, 150, 40, 150, 40, 150, 40, 150};
-const unsigned long MAX_QUEUE[NUM_PUMPS] = {8000, 30000, 8000, 30000, 8000, 30000, 8000, 30000};
-const unsigned long MAX_TOTAL[NUM_PUMPS] = {20000, 90000, 20000, 90000, 20000, 90000, 20000, 90000};
+const unsigned long MS_PER_UNIT[NUM_PUMPS] = {80, 300, 80, 300, 80, 300, 80, 300};  // doubled 2026-11-23
+const unsigned long MAX_QUEUE[NUM_PUMPS] = {16000, 60000, 16000, 60000, 16000, 60000, 16000, 60000};
+const unsigned long MAX_TOTAL[NUM_PUMPS] = {40000, 180000, 40000, 180000, 40000, 180000, 40000, 180000};
 
 // Frozen app order [anger, joy, anxiety, sadness, disgust, fear,
 // embarrassment, boredom] -> physical [A, Z, C, W, X, Y, D, B].

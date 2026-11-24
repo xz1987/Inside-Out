@@ -73,11 +73,11 @@ Default normalized settings:
 | Setting | Default | Meaning |
 |---|---:|---|
 | Strength (feed gain) | ×3 | Feed is multiplied by this before clamping; configurable ×1–×5 |
-| Air minimum change | 25 | Smallest non-zero transcription delta for an air Figure (≈1 s); also the Test pulse |
-| Water minimum change | 10 | Smallest non-zero transcription delta for a water Figure (≈1.5 s); also the Test pulse |
+| Air minimum change | 25 | Smallest non-zero transcription delta for an air Figure (≈2 s); also the Test pulse |
+| Water minimum change | 10 | Smallest non-zero transcription delta for a water Figure (≈3 s); also the Test pulse |
 | Maximum change per event | 80 | Largest transcription delta sent to one channel for one event |
-| Air interpretation total | 500 | App-side cumulative cap for each air channel (= board cap, 20 s) |
-| Water interpretation total | 600 | App-side cumulative cap for each water channel (= board cap, 90 s) |
+| Air interpretation total | 500 | App-side cumulative cap for each air channel (= board cap, 40 s) |
+| Water interpretation total | 600 | App-side cumulative cap for each water channel (= board cap, 180 s) |
 | Air pre-fill | 50 | One "Pre-fill all air balloons" tap: every air channel, water untouched |
 
 Revised 2026-11-10: the original defaults (minimum 5, maximum 25, totals 100)

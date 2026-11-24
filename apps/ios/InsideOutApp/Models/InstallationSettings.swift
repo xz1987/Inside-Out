@@ -20,14 +20,14 @@ final class InstallationSettings: ObservableObject {
 
     private let defaults: UserDefaults
 
-    // Normalized units: air pumps run 40 ms per unit, water pumps 150 ms (see the sketch).
-    // Air 25 ≈ 1 s, water 10 ≈ 1.5 s. Max 80 per event ≈ air 3.2 s / water 12 s.
-    // Session limits equal the board's own cumulative caps (air 20 s, water 90 s).
+    // Normalized units: air pumps run 80 ms per unit, water pumps 300 ms (see the sketch).
+    // Air 25 ≈ 2 s, water 10 ≈ 3 s. Max 80 per event ≈ air 6.4 s / water 24 s.
+    // Session limits equal the board's own cumulative caps (air 40 s, water 180 s).
     static let defaultAirMinimum = 25
     static let defaultWaterMinimum = 10
     static let defaultMaximumPerEvent = 80
     static let defaultFeedGain = 3.0
-    /// One "Pre-fill air" tap: 50 units ≈ 2 s on every air pump. 100 is the protocol's per-command maximum.
+    /// One "Pre-fill air" tap: 50 units ≈ 4 s on every air pump. 100 is the protocol's per-command maximum.
     static let defaultAirPrefill = 50
     static let defaultAirLimit = 500
     static let defaultWaterLimit = 600
@@ -86,7 +86,7 @@ final class InstallationSettings: ObservableObject {
         airPrefillAmount = min(100, max(1, airPrefillAmount))
         maximumChangePerEvent = min(100, max(max(airMinimumChange, waterMinimumChange), maximumChangePerEvent))
         // Board safety ceilings expressed in the same normalized units:
-        // air 20,000 / 40 = 500; water 90,000 / 150 = 600.
+        // air 40,000 / 80 = 500; water 180,000 / 300 = 600.
         airInterpretationLimit = min(500, max(maximumChangePerEvent, airInterpretationLimit))
         waterInterpretationLimit = min(600, max(maximumChangePerEvent, waterInterpretationLimit))
     }
